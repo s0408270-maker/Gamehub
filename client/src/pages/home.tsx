@@ -23,24 +23,24 @@ export default function Home() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header Navigation */}
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Gamepad2 className="w-8 h-8 text-primary" data-testid="icon-logo" />
-            <h1 className="text-2xl font-bold text-foreground" data-testid="text-site-name">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <Gamepad2 className="w-6 sm:w-8 h-6 sm:h-8 text-primary flex-shrink-0" data-testid="icon-logo" />
+            <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate" data-testid="text-site-name">
               GameHub
             </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="default" data-testid="button-upload-nav">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload
+                <Button variant="default" size="sm" className="sm:size-auto" data-testid="button-upload-nav">
+                  <Upload className="w-4 h-4" />
+                  <span className="hidden sm:inline ml-2">Upload</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold">Upload New Game</DialogTitle>
+                  <DialogTitle className="text-xl sm:text-2xl font-bold">Upload New Game</DialogTitle>
                 </DialogHeader>
                 <UploadGameForm onSuccess={() => setUploadDialogOpen(false)} />
               </DialogContent>
@@ -51,7 +51,7 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative h-[500px] flex items-center justify-center overflow-hidden"  data-testid="section-hero">
+      <section className="relative h-64 sm:h-[500px] flex items-center justify-center overflow-hidden"  data-testid="section-hero">
         <div className="absolute inset-0">
           <img 
             src={heroImage} 
@@ -61,17 +61,17 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-background"></div>
         </div>
         
-        <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <Gamepad2 className="w-12 h-12 text-primary" data-testid="icon-hero-gamepad" />
-            <h2 className="text-5xl md:text-6xl font-black text-white tracking-tight" data-testid="heading-hero-title">
+        <div className="relative z-10 text-center px-4 sm:px-6 max-w-5xl mx-auto w-full">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <Gamepad2 className="w-8 sm:w-12 h-8 sm:h-12 text-primary flex-shrink-0" data-testid="icon-hero-gamepad" />
+            <h2 className="text-2xl sm:text-5xl md:text-6xl font-black text-white tracking-tight line-clamp-2" data-testid="heading-hero-title">
               GameHub
             </h2>
           </div>
-          <p className="text-xl md:text-2xl text-white/90 mb-8 font-medium" data-testid="text-hero-subtitle">
+          <p className="text-base sm:text-xl md:text-2xl text-white/90 mb-4 sm:mb-8 font-medium" data-testid="text-hero-subtitle">
             Your Personal Game Arcade
           </p>
-          <p className="text-lg text-white/75 mb-10 max-w-2xl mx-auto" data-testid="text-hero-description">
+          <p className="text-sm sm:text-lg text-white/75 mb-6 sm:mb-10 max-w-2xl mx-auto" data-testid="text-hero-description">
             Upload and play HTML5 games instantly. Build your collection and enjoy unlimited gaming.
           </p>
           
@@ -79,16 +79,16 @@ export default function Home() {
             <DialogTrigger asChild>
               <Button 
                 size="lg" 
-                className="text-lg px-8 h-14 bg-primary hover:bg-primary/90 backdrop-blur-sm shadow-lg shadow-primary/20"
+                className="text-sm sm:text-lg px-4 sm:px-8 h-10 sm:h-14 bg-primary hover:bg-primary/90 backdrop-blur-sm shadow-lg shadow-primary/20"
                 data-testid="button-upload-hero"
               >
-                <Upload className="w-5 h-5 mr-2" />
-                Upload Your Game
+                <Upload className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                Upload Game
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold">Upload New Game</DialogTitle>
+                <DialogTitle className="text-xl sm:text-2xl font-bold">Upload New Game</DialogTitle>
               </DialogHeader>
               <UploadGameForm onSuccess={() => setUploadDialogOpen(false)} />
             </DialogContent>
@@ -97,31 +97,31 @@ export default function Home() {
       </section>
 
       {/* Games Grid Section */}
-      <section className="max-w-7xl mx-auto px-6 py-16 flex-1">
-        <div className="flex items-center justify-between mb-8">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-16 flex-1 w-full">
+        <div className="flex items-start sm:items-center justify-between mb-6 sm:mb-8 flex-col sm:flex-row gap-4">
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2" data-testid="heading-game-collection">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2" data-testid="heading-game-collection">
               Game Collection
             </h2>
-            <p className="text-muted-foreground text-lg" data-testid="text-game-count">
+            <p className="text-sm sm:text-base text-muted-foreground" data-testid="text-game-count">
               {games?.length ? `${games.length} game${games.length !== 1 ? 's' : ''} available` : 'Start building your collection'}
             </p>
           </div>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <Card key={i} className="overflow-hidden">
                 <Skeleton className="aspect-video w-full" />
-                <CardContent className="p-4">
-                  <Skeleton className="h-6 w-3/4" />
+                <CardContent className="p-3 sm:p-4">
+                  <Skeleton className="h-4 sm:h-6 w-3/4" />
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : games && games.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
             {games.map((game) => (
               <Card 
                 key={game.id} 
