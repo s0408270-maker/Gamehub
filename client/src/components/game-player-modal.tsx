@@ -1,7 +1,10 @@
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Game } from "@shared/schema";
 import { useEffect, useState } from "react";
+
+// Add Ruffle player script
+const RUFFLE_SCRIPT = "https://cdn.jsdelivr.net/npm/ruffle-rs@latest/dist/ruffle.js";
 
 interface GamePlayerModalProps {
   game: Game;
@@ -13,6 +16,7 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const gameType = (game as any).gameType || "html";
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -32,7 +36,7 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
     };
   }, [open, onClose]);
 
-  // Fetch game HTML and create blob URL for secure loading
+  // Fetch game file and create blob URL for secure loading
   useEffect(() => {
     if (!open) return;
 
@@ -43,14 +47,22 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
       setError(null);
 
       try {
+        // Load Ruffle for SWF files
+        if (gameType === "swf") {
+          const script = document.createElement("script");
+          script.src = RUFFLE_SCRIPT;
+          script.async = true;
+          document.body.appendChild(script);
+        }
+
         const response = await fetch(`/api/play/${game.id}`);
         
         if (!response.ok) {
           throw new Error("Failed to load game");
         }
 
-        const htmlBlob = await response.blob();
-        objectUrl = URL.createObjectURL(htmlBlob);
+        const blob = await response.blob();
+        objectUrl = URL.createObjectURL(blob);
         setBlobUrl(objectUrl);
       } catch (err) {
         console.error("Error loading game:", err);
@@ -69,7 +81,7 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
       }
       setBlobUrl(null);
     };
-  }, [open, game.id]);
+  }, [open, game.id, gameType]);
 
   if (!open) return null;
 
@@ -99,7 +111,7 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
           </Button>
         </div>
 
-        {/* Game iframe */}
+        {/* Game Container */}
         <div className="flex-1 bg-background rounded-md overflow-hidden shadow-2xl flex items-center justify-center">
           {loading ? (
             <div className="flex flex-col items-center gap-3 sm:gap-4 text-white px-4">
@@ -108,18 +120,29 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
             </div>
           ) : error ? (
             <div className="text-center text-white px-4">
+              <AlertCircle className="w-8 sm:w-12 h-8 sm:h-12 text-destructive mx-auto mb-3" />
               <p className="text-lg sm:text-xl font-semibold mb-2">Oops!</p>
               <p className="text-sm sm:text-base">{error}</p>
             </div>
           ) : blobUrl ? (
-            <iframe
-              src={blobUrl}
-              className="w-full h-full border-0"
-              title={game.title}
-              sandbox="allow-scripts allow-forms allow-pointer-lock"
-              referrerPolicy="no-referrer"
-              data-testid="iframe-game"
-            />
+            gameType === "swf" ? (
+              <embed
+                src={blobUrl}
+                type="application/x-shockwave-flash"
+                className="w-full h-full"
+                title={game.title}
+                data-testid="embed-game-swf"
+              />
+            ) : (
+              <iframe
+                src={blobUrl}
+                className="w-full h-full border-0"
+                title={game.title}
+                sandbox="allow-scripts allow-forms allow-pointer-lock"
+                referrerPolicy="no-referrer"
+                data-testid="iframe-game"
+              />
+            )
           ) : null}
         </div>
 

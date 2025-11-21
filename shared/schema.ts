@@ -16,6 +16,7 @@ export const games = pgTable("games", {
   title: text("title").notNull(),
   thumbnail: text("thumbnail").notNull(),
   htmlPath: text("html_path").notNull(),
+  gameType: text("game_type").default("html").notNull(), // 'html' or 'swf'
 });
 
 // Groups
@@ -47,6 +48,7 @@ export const groupGames = pgTable("group_games", {
   htmlPath: text("html_path").notNull(),
   uploadedBy: varchar("uploaded_by").notNull(),
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+  gameType: text("game_type").default("html").notNull(), // 'html' or 'swf'
 });
 
 // Messages for group chat

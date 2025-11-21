@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
-import { Upload, FileCode, Image as ImageIcon, Loader2, AlertTriangle } from "lucide-react";
+import { Upload, FileCode, Image as ImageIcon, Loader2, AlertTriangle, Disc3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,12 +23,12 @@ interface UploadGameFormProps {
 }
 
 export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
-  const [htmlFile, setHtmlFile] = useState<File | null>(null);
-  const [htmlFileName, setHtmlFileName] = useState<string>("");
+  const [gameFile, setGameFile] = useState<File | null>(null);
+  const [gameFileName, setGameFileName] = useState<string>("");
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailFileName, setThumbnailFileName] = useState<string>("");
   const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
-  const [fileErrors, setFileErrors] = useState<{ html?: string; thumbnail?: string }>({});
+  const [fileErrors, setFileErrors] = useState<{ game?: string; thumbnail?: string }>({});
   const { toast } = useToast();
 
   const form = useForm<TitleFormData>({
@@ -40,12 +40,12 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
 
   const uploadMutation = useMutation({
     mutationFn: async (data: TitleFormData) => {
-      if (!htmlFile) throw new Error("HTML file is required");
+      if (!gameFile) throw new Error("Game file is required");
       if (!thumbnailFile) throw new Error("Thumbnail is required");
 
       const formData = new FormData();
       formData.append("title", data.title);
-      formData.append("htmlFile", htmlFile);
+      formData.append("gameFile", gameFile);
       formData.append("thumbnail", thumbnailFile);
 
       const response = await fetch("/api/games", {
@@ -67,8 +67,8 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
         description: "Your game has been uploaded successfully.",
       });
       form.reset();
-      setHtmlFile(null);
-      setHtmlFileName("");
+      setGameFile(null);
+      setGameFileName("");
       setThumbnailFile(null);
       setThumbnailFileName("");
       setThumbnailPreview("");
@@ -85,12 +85,12 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
   });
 
   const onSubmit = (data: TitleFormData) => {
-    const errors: { html?: string; thumbnail?: string } = {};
+    const errors: { game?: string; thumbnail?: string } = {};
     
-    if (!htmlFile) {
-      errors.html = "HTML file is required";
-    } else if (!htmlFile.name.endsWith(".html")) {
-      errors.html = "File must be an HTML file";
+    if (!gameFile) {
+      errors.game = "Game file is required";
+    } else if (!gameFile.name.endsWith(".html") && !gameFile.name.endsWith(".swf")) {
+      errors.game = "File must be HTML or SWF";
     }
     
     if (!thumbnailFile) {
@@ -138,38 +138,42 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
         />
 
         <div>
-          <Label className="text-sm sm:text-base font-semibold block mb-2">HTML Game File</Label>
+          <Label className="text-sm sm:text-base font-semibold block mb-2">Game File (HTML or SWF)</Label>
           <label
-            htmlFor="html-file-input"
+            htmlFor="game-file-input"
             className="flex items-center justify-center gap-2 sm:gap-3 p-4 sm:p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all block"
-            data-testid="label-html-upload"
+            data-testid="label-game-upload"
           >
             <input
               type="file"
-              accept=".html,text/html,text/plain"
-              id="html-file-input"
-              data-testid="input-html-file"
+              accept=".html,.swf,text/html,text/plain,application/x-shockwave-flash"
+              id="game-file-input"
+              data-testid="input-game-file"
               style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'auto' }}
               onChange={(e) => {
                 const file = (e.target as HTMLInputElement).files?.[0];
                 if (file) {
-                  setHtmlFile(file);
-                  setHtmlFileName(file.name);
-                  setFileErrors(prev => ({ ...prev, html: undefined }));
+                  setGameFile(file);
+                  setGameFileName(file.name);
+                  setFileErrors(prev => ({ ...prev, game: undefined }));
                 }
               }}
             />
-            <FileCode className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
+            {gameFileName.endsWith(".swf") ? (
+              <Disc3 className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
+            ) : (
+              <FileCode className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
+            )}
             <div className="text-center">
-              <p className="font-medium text-foreground text-xs sm:text-sm line-clamp-1" data-testid="text-html-filename">
-                {htmlFileName || "Click to upload HTML file"}
+              <p className="font-medium text-foreground text-xs sm:text-sm line-clamp-1" data-testid="text-game-filename">
+                {gameFileName || "Click to upload game file"}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                HTML game file
+                HTML or SWF game file
               </p>
             </div>
           </label>
-          {fileErrors.html && <p className="text-xs sm:text-sm text-destructive mt-2">{fileErrors.html}</p>}
+          {fileErrors.game && <p className="text-xs sm:text-sm text-destructive mt-2">{fileErrors.game}</p>}
         </div>
 
         <div>

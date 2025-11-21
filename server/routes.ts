@@ -37,11 +37,12 @@ const upload = multer({
     },
   }),
   fileFilter: (req, file, cb) => {
-    if (file.fieldname === "htmlFile") {
-      if (file.mimetype === "text/html" || file.originalname.endsWith(".html")) {
+    if (file.fieldname === "gameFile") {
+      if (file.mimetype === "text/html" || file.originalname.endsWith(".html") || 
+          file.mimetype === "application/x-shockwave-flash" || file.originalname.endsWith(".swf")) {
         cb(null, true);
       } else {
-        cb(new Error("Only HTML files are allowed"));
+        cb(new Error("Only HTML or SWF files are allowed"));
       }
     } else if (file.fieldname === "thumbnail") {
       if (file.mimetype.startsWith("image/")) {
@@ -182,20 +183,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/games",
     upload.fields([
-      { name: "htmlFile", maxCount: 1 },
+      { name: "gameFile", maxCount: 1 },
       { name: "thumbnail", maxCount: 1 },
     ]),
     async (req, res) => {
       try {
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
         
-        if (!files.htmlFile || !files.thumbnail) {
+        if (!files.gameFile || !files.thumbnail) {
           return res.status(400).json({ 
-            message: "Both HTML file and thumbnail are required" 
+            message: "Both game file and thumbnail are required" 
           });
         }
 
-        const htmlFile = files.htmlFile[0];
+        const gameFile = files.gameFile[0];
         const thumbnailFile = files.thumbnail[0];
         const { title } = req.body;
 
@@ -203,15 +204,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Game title is required" });
         }
 
+        // Determine game type
+        const gameType = gameFile.originalname.endsWith(".swf") ? "swf" : "html";
+
         // Create paths relative to the uploads directory
-        // Store the file system path for HTML (to be served via /api/play/:gameId)
-        const htmlPath = `/uploads/games/${htmlFile.filename}`;
+        const htmlPath = `/uploads/games/${gameFile.filename}`;
         const thumbnailPath = `/uploads/thumbnails/${thumbnailFile.filename}`;
 
         const gameData = insertGameSchema.parse({
           title,
           htmlPath,
           thumbnail: thumbnailPath,
+          gameType,
         });
 
         const game = await storage.createGame(gameData);
