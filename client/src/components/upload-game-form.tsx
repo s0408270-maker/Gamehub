@@ -43,10 +43,12 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
       if (!gameFile) throw new Error("Game file is required");
       if (!thumbnailFile) throw new Error("Thumbnail is required");
 
+      const username = localStorage.getItem("username") || "";
       const formData = new FormData();
       formData.append("title", data.title);
       formData.append("gameFile", gameFile);
       formData.append("thumbnail", thumbnailFile);
+      formData.append("username", username);
 
       const response = await fetch("/api/games", {
         method: "POST",

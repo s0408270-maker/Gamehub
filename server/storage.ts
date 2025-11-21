@@ -7,6 +7,7 @@ export interface IStorage {
   getAllGames(): Promise<Game[]>;
   getGame(id: string): Promise<Game | undefined>;
   createGame(game: InsertGame): Promise<Game>;
+  deleteGame(id: string): Promise<void>;
   
   // Users
   getOrCreateUser(username: string): Promise<User>;
@@ -49,6 +50,10 @@ export class DatabaseStorage implements IStorage {
   async createGame(insertGame: InsertGame): Promise<Game> {
     const result = await db.insert(games).values(insertGame).returning();
     return result[0];
+  }
+
+  async deleteGame(id: string): Promise<void> {
+    await db.delete(games).where(eq(games.id, id));
   }
 
   // Users

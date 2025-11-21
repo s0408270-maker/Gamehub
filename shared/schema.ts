@@ -17,6 +17,7 @@ export const games = pgTable("games", {
   thumbnail: text("thumbnail").notNull(),
   htmlPath: text("html_path").notNull(),
   gameType: text("game_type").default("html").notNull(), // 'html' or 'swf'
+  createdBy: varchar("created_by").notNull(),
 });
 
 // Groups

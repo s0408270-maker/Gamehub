@@ -200,11 +200,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const gameFile = files.gameFile[0];
         const thumbnailFile = files.thumbnail[0];
-        const { title } = req.body;
+        const { title, username } = req.body;
 
-        if (!title) {
-          return res.status(400).json({ message: "Game title is required" });
+        if (!title || !username) {
+          return res.status(400).json({ message: "Game title and username are required" });
         }
+
+        const user = await storage.getOrCreateUser(username);
 
         // Determine game type
         const gameType = gameFile.originalname.endsWith(".swf") ? "swf" : "html";
@@ -218,6 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           htmlPath,
           thumbnail: thumbnailPath,
           gameType,
+          createdBy: user.id,
         });
 
         const game = await storage.createGame(gameData);
@@ -233,6 +236,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   );
+
+  // DELETE /api/games/:id - Delete a game
+  app.delete("/api/games/:id", async (req, res) => {
+    try {
+      const game = await storage.getGame(req.params.id);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+
+      const username = req.body.username;
+      const user = await storage.getUserByUsername(username);
+      
+      if (!user || game.createdBy !== user.id) {
+        return res.status(403).json({ message: "You can only delete games you created" });
+      }
+
+      await storage.deleteGame(req.params.id);
+      res.json({ message: "Game deleted" });
+    } catch (error) {
+      console.error("Error deleting game:", error);
+      res.status(500).json({ message: "Failed to delete game" });
+    }
+  });
 
   // GROUP ENDPOINTS
 

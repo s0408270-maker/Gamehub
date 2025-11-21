@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Upload, Play, Gamepad2, Github, Twitter, Mail } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Upload, Play, Gamepad2, Github, Twitter, Mail, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,15 +8,32 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { UploadGameForm } from "@/components/upload-game-form";
 import { GamePlayerModal } from "@/components/game-player-modal";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Game } from "@shared/schema";
 import heroImage from "@assets/generated_images/gaming_portal_hero_background.png";
 
 export default function Home() {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const { toast } = useToast();
+  const username = localStorage.getItem("username") || "";
 
   const { data: games, isLoading } = useQuery<Game[]>({
     queryKey: ["/api/games"],
+  });
+
+  const deleteGameMutation = useMutation({
+    mutationFn: async (gameId: string) => {
+      return await apiRequest("DELETE", `/api/games/${gameId}`, { username });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/games"] });
+      toast({ title: "Success", description: "Game deleted" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error?.message || "Failed to delete game" });
+    },
   });
 
   return (
@@ -125,11 +142,13 @@ export default function Home() {
             {games.map((game) => (
               <Card 
                 key={game.id} 
-                className="group overflow-hidden hover-elevate active-elevate-2 cursor-pointer transition-all duration-300"
-                onClick={() => setSelectedGame(game)}
+                className="group overflow-hidden hover-elevate active-elevate-2 transition-all duration-300 relative"
                 data-testid={`card-game-${game.id}`}
               >
-                <div className="relative aspect-video overflow-hidden bg-muted">
+                <div 
+                  className="relative aspect-video overflow-hidden bg-muted cursor-pointer"
+                  onClick={() => setSelectedGame(game)}
+                >
                   <img 
                     src={game.thumbnail} 
                     alt={game.title}
@@ -143,10 +162,25 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <CardContent className="p-4">
-                  <h3 className="text-lg font-semibold text-card-foreground line-clamp-1" data-testid={`text-game-title-${game.id}`}>
+                <CardContent className="p-4 flex items-start justify-between gap-2">
+                  <h3 className="text-lg font-semibold text-card-foreground line-clamp-1 flex-1" data-testid={`text-game-title-${game.id}`}>
                     {game.title}
                   </h3>
+                  {(game as any).createdBy && username && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 flex-shrink-0 text-destructive hover:bg-destructive/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteGameMutation.mutate(game.id);
+                      }}
+                      disabled={deleteGameMutation.isPending}
+                      data-testid={`button-delete-game-${game.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))}
