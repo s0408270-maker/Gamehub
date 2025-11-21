@@ -140,14 +140,14 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
         <div>
           <Label className="text-sm sm:text-base font-semibold block mb-2">HTML Game File</Label>
           <div className="relative">
-            <Input
+            <input
               type="file"
-              accept=".html"
+              accept=".html,text/html,text/plain"
               className="hidden"
               id="html-file-input"
               data-testid="input-html-file"
               onChange={(e) => {
-                const file = e.target.files?.[0];
+                const file = (e.target as HTMLInputElement).files?.[0];
                 if (file) {
                   setHtmlFile(file);
                   setHtmlFileName(file.name);
@@ -177,14 +177,14 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
         <div>
           <Label className="text-sm sm:text-base font-semibold block mb-2">Thumbnail Image</Label>
           <div className="relative">
-            <Input
+            <input
               type="file"
-              accept="image/png,image/jpeg,image/gif,image/webp"
+              accept="image/*"
               className="hidden"
               id="thumbnail-input"
               data-testid="input-thumbnail"
               onChange={(e) => {
-                const file = e.target.files?.[0];
+                const file = (e.target as HTMLInputElement).files?.[0];
                 if (file) {
                   setThumbnailFile(file);
                   setThumbnailFileName(file.name);
