@@ -87,8 +87,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Groups
-  async createGroup(group: InsertGroup): Promise<Group> {
-    const result = await db.insert(groups).values(group).returning();
+  async createGroup(group: InsertGroup & { isPrivate?: boolean }): Promise<Group> {
+    const generateCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+    const groupData = {
+      ...group,
+      isPrivate: group.isPrivate ? "true" : "false",
+      joinCode: group.isPrivate ? generateCode() : null,
+    };
+    const result = await db.insert(groups).values(groupData as any).returning();
     const newGroup = result[0];
     // Add creator as admin
     await db.insert(groupMembers).values({
@@ -97,6 +103,16 @@ export class DatabaseStorage implements IStorage {
       role: "admin",
     });
     return newGroup;
+  }
+
+  async joinGroupWithCode(userId: string, joinCode: string): Promise<Group | undefined> {
+    const group = await db.select().from(groups).where(eq(groups.joinCode, joinCode)).limit(1);
+    if (!group[0]) return undefined;
+    const isMember = await this.isGroupMember(group[0].id, userId);
+    if (!isMember) {
+      await this.addGroupMember(group[0].id, userId);
+    }
+    return group[0];
   }
 
   async getGroup(id: string): Promise<Group | undefined> {

@@ -25,6 +25,8 @@ export const groups = pgTable("groups", {
   description: text("description"),
   createdBy: varchar("created_by").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  isPrivate: text("is_private").default("false").notNull(),
+  joinCode: text("join_code"),
 });
 
 // Group members

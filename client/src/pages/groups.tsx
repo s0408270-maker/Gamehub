@@ -14,8 +14,11 @@ import type { Group } from "@shared/schema";
 export default function Groups() {
   const [, setLocation] = useLocation();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [joinCodeDialogOpen, setJoinCodeDialogOpen] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [groupDescription, setGroupDescription] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
   const { toast } = useToast();
   
   const username = localStorage.getItem("username") || "";
@@ -36,21 +39,56 @@ export default function Groups() {
         name: groupName,
         description: groupDescription,
         username: user,
+        isPrivate,
       });
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       setGroupName("");
       setGroupDescription("");
+      setIsPrivate(false);
       setCreateDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
       if (username) {
         queryClient.invalidateQueries({ queryKey: [`/api/users/${username}/groups`] });
       }
-      toast({ title: "Success", description: "Group created!" });
+      if (isPrivate && data.joinCode) {
+        toast({ title: "Success", description: `Group created! Join code: ${data.joinCode}` });
+      } else {
+        toast({ title: "Success", description: "Group created!" });
+      }
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error?.message || "Failed to create group" });
+    },
+  });
+
+  const joinWithCodeMutation = useMutation({
+    mutationFn: async () => {
+      let user = username;
+      if (!user) {
+        user = prompt("Please enter a username:");
+        if (!user) throw new Error("Username is required");
+        localStorage.setItem("username", user);
+      }
+      const res = await apiRequest("POST", "/api/groups/join-code", {
+        joinCode: joinCode.toUpperCase(),
+        username: user,
+      });
+      return await res.json();
+    },
+    onSuccess: (data: any) => {
+      setJoinCode("");
+      setJoinCodeDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      if (username) {
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${username}/groups`] });
+      }
+      setLocation(`/groups/${data.group.id}`);
+      toast({ title: "Success", description: "Joined group!" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error?.message || "Invalid join code" });
     },
   });
 
@@ -126,6 +164,19 @@ export default function Groups() {
                     data-testid="input-group-description"
                   />
                 </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="private-group"
+                    checked={isPrivate}
+                    onChange={(e) => setIsPrivate(e.target.checked)}
+                    data-testid="checkbox-private-group"
+                    className="w-4 h-4"
+                  />
+                  <label htmlFor="private-group" className="text-sm font-medium cursor-pointer">
+                    Make group private (with join code)
+                  </label>
+                </div>
                 <Button
                   onClick={() => createGroupMutation.mutate()}
                   disabled={!groupName || createGroupMutation.isPending}
@@ -138,6 +189,45 @@ export default function Groups() {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* Join with Code Button */}
+        {!isLoading && groups && groups.length > 0 && (
+          <div className="mb-8">
+            <Dialog open={joinCodeDialogOpen} onOpenChange={setJoinCodeDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" data-testid="button-join-with-code">
+                  <Lock className="w-4 h-4 mr-2" />
+                  Join Private Group
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="w-[95vw] sm:max-w-md" data-testid="dialog-join-code">
+                <DialogHeader>
+                  <DialogTitle>Join Private Group</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Join Code</label>
+                    <Input
+                      placeholder="Enter 6-character code"
+                      value={joinCode}
+                      onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                      data-testid="input-join-code"
+                      maxLength={6}
+                    />
+                  </div>
+                  <Button
+                    onClick={() => joinWithCodeMutation.mutate()}
+                    disabled={!joinCode || joinWithCodeMutation.isPending}
+                    className="w-full"
+                    data-testid="button-submit-join-code"
+                  >
+                    {joinWithCodeMutation.isPending ? "Joining..." : "Join"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
 
         {/* Groups Grid */}
         {isLoading ? (

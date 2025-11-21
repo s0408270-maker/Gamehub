@@ -257,23 +257,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/groups - Create a new group
   app.post("/api/groups", async (req, res) => {
     try {
-      const { name, description, username } = req.body;
+      const { name, description, username, isPrivate } = req.body;
       if (!name || !username) {
         return res.status(400).json({ message: "Name and username required" });
       }
 
       const user = await storage.getOrCreateUser(username);
-      const groupData = insertGroupSchema.parse({
+      const groupData = {
         name,
         description: description || "",
         createdBy: user.id,
-      });
+        isPrivate: isPrivate || false,
+      };
 
       const group = await storage.createGroup(groupData);
       res.status(201).json(group);
     } catch (error) {
       console.error("Error creating group:", error);
       res.status(400).json({ message: "Failed to create group" });
+    }
+  });
+
+  // POST /api/groups/join-code - Join group with code
+  app.post("/api/groups/join-code", async (req, res) => {
+    try {
+      const { joinCode, username } = req.body;
+      if (!joinCode || !username) {
+        return res.status(400).json({ message: "Join code and username required" });
+      }
+
+      const user = await storage.getOrCreateUser(username);
+      const group = await storage.joinGroupWithCode(user.id, joinCode);
+      if (!group) {
+        return res.status(404).json({ message: "Invalid join code" });
+      }
+
+      res.json({ message: "Joined group", group });
+    } catch (error) {
+      console.error("Error joining with code:", error);
+      res.status(400).json({ message: "Failed to join group" });
     }
   });
 
