@@ -17,6 +17,7 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const gameType = (game as any).gameType || "html";
+  const username = localStorage.getItem("username") || "";
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -35,6 +36,25 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
       document.body.style.overflow = "unset";
     };
   }, [open, onClose]);
+
+  // Track coins while playing - award 5 coins per minute
+  useEffect(() => {
+    if (!open || !username) return;
+
+    const interval = setInterval(async () => {
+      try {
+        await fetch("/api/coins/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, amount: 5 }),
+        });
+      } catch (err) {
+        console.error("Failed to add coins:", err);
+      }
+    }, 60000); // Every 60 seconds
+
+    return () => clearInterval(interval);
+  }, [open, username]);
 
   // Fetch game file and create blob URL for secure loading
   useEffect(() => {

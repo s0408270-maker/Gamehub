@@ -505,6 +505,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // COINS & COSMETICS ENDPOINTS
+
+  // GET /api/leaderboard - Get top 10 users by coins
+  app.get("/api/leaderboard", async (req, res) => {
+    try {
+      const leaderboard = await storage.getLeaderboard(10);
+      res.json(leaderboard);
+    } catch (error) {
+      console.error("Error fetching leaderboard:", error);
+      res.status(500).json({ message: "Failed to fetch leaderboard" });
+    }
+  });
+
+  // GET /api/cosmetics - Get all cosmetics
+  app.get("/api/cosmetics", async (req, res) => {
+    try {
+      const allCosmetics = await storage.getAllCosmetics();
+      res.json(allCosmetics);
+    } catch (error) {
+      console.error("Error fetching cosmetics:", error);
+      res.status(500).json({ message: "Failed to fetch cosmetics" });
+    }
+  });
+
+  // GET /api/users/:username/cosmetics - Get user owned cosmetics
+  app.get("/api/users/:username/cosmetics", async (req, res) => {
+    try {
+      const user = await storage.getUserByUsername(req.params.username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const userCosmetics = await storage.getUserCosmetics(user.id);
+      const activeCosmetic = await storage.getActiveCosmetic(user.id);
+      res.json({ owned: userCosmetics, active: activeCosmetic });
+    } catch (error) {
+      console.error("Error fetching user cosmetics:", error);
+      res.status(500).json({ message: "Failed to fetch cosmetics" });
+    }
+  });
+
+  // POST /api/cosmetics/purchase - Purchase a cosmetic
+  app.post("/api/cosmetics/purchase", async (req, res) => {
+    try {
+      const { username, cosmeticId } = req.body;
+      if (!username || !cosmeticId) {
+        return res.status(400).json({ message: "Username and cosmetic ID required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const cosmetic = await storage.getAllCosmetics();
+      const item = cosmetic.find(c => c.id === cosmeticId);
+      if (!item) {
+        return res.status(404).json({ message: "Cosmetic not found" });
+      }
+
+      if (user.coins < item.price) {
+        return res.status(400).json({ message: "Not enough coins" });
+      }
+
+      // Deduct coins
+      await storage.addCoins(user.id, -item.price);
+      
+      // Purchase cosmetic
+      const purchased = await storage.purchaseCosmetic(user.id, cosmeticId);
+      res.status(201).json(purchased);
+    } catch (error) {
+      console.error("Error purchasing cosmetic:", error);
+      res.status(400).json({ message: "Failed to purchase cosmetic" });
+    }
+  });
+
+  // POST /api/cosmetics/activate - Activate a cosmetic
+  app.post("/api/cosmetics/activate", async (req, res) => {
+    try {
+      const { username, cosmeticId } = req.body;
+      if (!username) {
+        return res.status(400).json({ message: "Username required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const active = await storage.setActiveCosmetic(user.id, cosmeticId || null);
+      res.json(active);
+    } catch (error) {
+      console.error("Error activating cosmetic:", error);
+      res.status(400).json({ message: "Failed to activate cosmetic" });
+    }
+  });
+
+  // POST /api/coins/add - Add coins to user (called when playing games)
+  app.post("/api/coins/add", async (req, res) => {
+    try {
+      const { username, amount } = req.body;
+      if (!username || !amount) {
+        return res.status(400).json({ message: "Username and amount required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const updated = await storage.addCoins(user.id, amount);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error adding coins:", error);
+      res.status(400).json({ message: "Failed to add coins" });
+    }
+  });
+
+  // GET /api/users/:username - Get user with coins
+  app.get("/api/users/:username", async (req, res) => {
+    try {
+      const user = await storage.getUserByUsername(req.params.username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

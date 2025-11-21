@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Gamepad2, Users, ChevronDown, LogOut } from "lucide-react";
+import { Gamepad2, Users, ChevronDown, LogOut, Trophy, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,9 +20,11 @@ import Auth from "@/pages/auth";
 import Home from "@/pages/home";
 import Groups from "@/pages/groups";
 import GroupDetail from "@/pages/group-detail";
+import Leaderboard from "@/pages/leaderboard";
+import CosmeticsShop from "@/pages/cosmetics-shop";
 import NotFound from "@/pages/not-found";
 import { ThemeToggle } from "@/components/theme-toggle";
-import type { Group } from "@shared/schema";
+import type { Group, User } from "@shared/schema";
 
 function Router() {
   return (
@@ -30,6 +32,8 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/groups" component={Groups} />
       <Route path="/groups/:groupId" component={GroupDetail} />
+      <Route path="/leaderboard" component={Leaderboard} />
+      <Route path="/shop" component={CosmeticsShop} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -44,7 +48,12 @@ function Header() {
     enabled: !!username,
   });
 
-  const currentTab = location === "/" ? "games" : location.startsWith("/groups") ? "groups" : "chat";
+  const { data: currentUser } = useQuery<User>({
+    queryKey: [`/api/users/${username}`],
+    enabled: !!username,
+  });
+
+  const currentTab = location === "/" ? "games" : location === "/leaderboard" ? "leaderboard" : location === "/shop" ? "shop" : location.startsWith("/groups") ? "groups" : "games";
   const isInGroup = location.startsWith("/groups/") && location !== "/groups";
 
   const handleLogout = () => {
@@ -97,6 +106,15 @@ function Header() {
             </DropdownMenu>
           )}
           
+          {username && currentUser && (
+            <div className="flex items-center gap-2 px-2 py-1 bg-secondary rounded-md">
+              <Zap className="w-3 h-3 text-primary" />
+              <span className="text-xs sm:text-sm font-semibold text-primary" data-testid="text-coin-display">
+                {currentUser.coins || 0}
+              </span>
+            </div>
+          )}
+          
           {username && (
             <div className="text-xs sm:text-sm text-muted-foreground px-2 py-1 bg-secondary rounded-md">
               {username}
@@ -124,8 +142,10 @@ function Header() {
           <Tabs value={currentTab} onValueChange={(tab) => {
             if (tab === "games") setLocation("/");
             else if (tab === "groups") setLocation("/groups");
+            else if (tab === "leaderboard") setLocation("/leaderboard");
+            else if (tab === "shop") setLocation("/shop");
           }} className="w-full">
-            <TabsList className="w-full justify-start h-auto bg-transparent p-0 rounded-none border-b border-border/50">
+            <TabsList className="w-full justify-start h-auto bg-transparent p-0 rounded-none border-b border-border/50 overflow-x-auto">
               <TabsTrigger value="games" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-games">
                 <Gamepad2 className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Games</span>
@@ -133,6 +153,14 @@ function Header() {
               <TabsTrigger value="groups" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-groups">
                 <Users className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Servers</span>
+              </TabsTrigger>
+              <TabsTrigger value="leaderboard" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-leaderboard">
+                <Trophy className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Leaderboard</span>
+              </TabsTrigger>
+              <TabsTrigger value="shop" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-shop">
+                <Zap className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Shop</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
