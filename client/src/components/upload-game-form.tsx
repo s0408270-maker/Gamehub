@@ -125,14 +125,14 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
         <FormField
           control={form.control}
           name="htmlFile"
-          render={({ field: { value, onChange, ...field } }) => (
+          render={({ field: { onChange, ...field } }) => (
             <FormItem>
               <FormLabel className="text-sm sm:text-base font-semibold">HTML Game File</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
                     type="file"
-                    accept=".html,text/html"
+                    accept=".html"
                     className="hidden"
                     id="html-file-input"
                     data-testid="input-html-file"
@@ -170,14 +170,14 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
         <FormField
           control={form.control}
           name="thumbnail"
-          render={({ field: { value, onChange, ...field } }) => (
+          render={({ field: { onChange } }) => (
             <FormItem>
               <FormLabel className="text-sm sm:text-base font-semibold">Thumbnail Image</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
                     type="file"
-                    accept="image/*"
+                    accept="image/png,image/jpeg,image/gif,image/webp"
                     className="hidden"
                     id="thumbnail-input"
                     data-testid="input-thumbnail"
@@ -193,7 +193,6 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                         reader.readAsDataURL(file);
                       }
                     }}
-                    {...field}
                   />
                   <Label
                     htmlFor="thumbnail-input"
