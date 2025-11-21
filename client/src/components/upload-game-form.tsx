@@ -146,10 +146,10 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
           >
             <input
               type="file"
-              accept=".html"
+              accept=".html,text/html,text/plain"
               id="html-file-input"
               data-testid="input-html-file"
-              style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+              style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'auto' }}
               onChange={(e) => {
                 const file = (e.target as HTMLInputElement).files?.[0];
                 if (file) {
