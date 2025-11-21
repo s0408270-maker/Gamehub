@@ -3,7 +3,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
-import { Upload, FileCode, Image as ImageIcon, Loader2, AlertTriangle, Disc3 } from "lucide-react";
+import { Upload, FileCode, Image as ImageIcon, Loader2, AlertTriangle, Disc3, Code } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,8 +25,10 @@ interface UploadGameFormProps {
 }
 
 export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
+  const [uploadMode, setUploadMode] = useState<"file" | "code">("file");
   const [gameFile, setGameFile] = useState<File | null>(null);
   const [gameFileName, setGameFileName] = useState<string>("");
+  const [htmlCode, setHtmlCode] = useState<string>("");
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailFileName, setThumbnailFileName] = useState<string>("");
   const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
@@ -40,37 +44,62 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
 
   const uploadMutation = useMutation({
     mutationFn: async (data: TitleFormData) => {
-      if (!gameFile) throw new Error("Game file is required");
-      if (!thumbnailFile) throw new Error("Thumbnail is required");
-
       const username = localStorage.getItem("username") || "";
-      const formData = new FormData();
-      formData.append("title", data.title);
-      formData.append("gameFile", gameFile);
-      formData.append("thumbnail", thumbnailFile);
-      formData.append("username", username);
 
-      const response = await fetch("/api/games", {
-        method: "POST",
-        body: formData,
-      });
+      if (uploadMode === "code") {
+        if (!htmlCode) throw new Error("HTML code is required");
+        if (!thumbnailFile) throw new Error("Thumbnail is required");
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to upload game");
+        const formData = new FormData();
+        formData.append("title", data.title);
+        formData.append("htmlCode", htmlCode);
+        formData.append("thumbnail", thumbnailFile);
+        formData.append("username", username);
+
+        const response = await fetch("/api/games/paste-code", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to create game");
+        }
+
+        return response.json();
+      } else {
+        if (!gameFile) throw new Error("Game file is required");
+        if (!thumbnailFile) throw new Error("Thumbnail is required");
+
+        const formData = new FormData();
+        formData.append("title", data.title);
+        formData.append("gameFile", gameFile);
+        formData.append("thumbnail", thumbnailFile);
+        formData.append("username", username);
+
+        const response = await fetch("/api/games", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to upload game");
+        }
+
+        return response.json();
       }
-
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/games"] });
       toast({
         title: "Success!",
-        description: "Your game has been uploaded successfully.",
+        description: "Your game has been created successfully.",
       });
       form.reset();
       setGameFile(null);
       setGameFileName("");
+      setHtmlCode("");
       setThumbnailFile(null);
       setThumbnailFileName("");
       setThumbnailPreview("");
@@ -89,10 +118,16 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
   const onSubmit = (data: TitleFormData) => {
     const errors: { game?: string; thumbnail?: string } = {};
     
-    if (!gameFile) {
-      errors.game = "Game file is required";
-    } else if (!gameFile.name.endsWith(".html") && !gameFile.name.endsWith(".swf")) {
-      errors.game = "File must be HTML or SWF";
+    if (uploadMode === "code") {
+      if (!htmlCode) {
+        errors.game = "HTML code is required";
+      }
+    } else {
+      if (!gameFile) {
+        errors.game = "Game file is required";
+      } else if (!gameFile.name.endsWith(".html") && !gameFile.name.endsWith(".swf")) {
+        errors.game = "File must be HTML or SWF";
+      }
     }
     
     if (!thumbnailFile) {
@@ -140,42 +175,71 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
         />
 
         <div>
-          <Label className="text-sm sm:text-base font-semibold block mb-2">Game File (HTML or SWF)</Label>
-          <label
-            htmlFor="game-file-input"
-            className="flex items-center justify-center gap-2 sm:gap-3 p-4 sm:p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all block"
-            data-testid="label-game-upload"
-          >
-            <input
-              type="file"
-              accept=".html,.swf,text/html,text/plain,application/x-shockwave-flash"
-              id="game-file-input"
-              data-testid="input-game-file"
-              style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'auto' }}
-              onChange={(e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                if (file) {
-                  setGameFile(file);
-                  setGameFileName(file.name);
+          <Label className="text-sm sm:text-base font-semibold block mb-3">Game Source</Label>
+          <Tabs value={uploadMode} onValueChange={(val) => setUploadMode(val as "file" | "code")} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="file" data-testid="tab-upload-file">
+                <Upload className="w-4 h-4 mr-2" />
+                Upload File
+              </TabsTrigger>
+              <TabsTrigger value="code" data-testid="tab-paste-code">
+                <Code className="w-4 h-4 mr-2" />
+                Paste Code
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="file" className="space-y-0">
+              <label
+                htmlFor="game-file-input"
+                className="flex items-center justify-center gap-2 sm:gap-3 p-4 sm:p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all block"
+                data-testid="label-game-upload"
+              >
+                <input
+                  type="file"
+                  accept=".html,.swf,text/html,text/plain,application/x-shockwave-flash"
+                  id="game-file-input"
+                  data-testid="input-game-file"
+                  style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'auto' }}
+                  onChange={(e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      setGameFile(file);
+                      setGameFileName(file.name);
+                      setFileErrors(prev => ({ ...prev, game: undefined }));
+                    }
+                  }}
+                />
+                {gameFileName.endsWith(".swf") ? (
+                  <Disc3 className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
+                ) : (
+                  <FileCode className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
+                )}
+                <div className="text-center">
+                  <p className="font-medium text-foreground text-xs sm:text-sm line-clamp-1" data-testid="text-game-filename">
+                    {gameFileName || "Click to upload game file"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
+                    HTML or SWF game file
+                  </p>
+                </div>
+              </label>
+              {fileErrors.game && <p className="text-xs sm:text-sm text-destructive mt-2">{fileErrors.game}</p>}
+            </TabsContent>
+
+            <TabsContent value="code" className="space-y-0">
+              <Textarea
+                placeholder="Paste your HTML game code here..."
+                value={htmlCode}
+                onChange={(e) => {
+                  setHtmlCode(e.target.value);
                   setFileErrors(prev => ({ ...prev, game: undefined }));
-                }
-              }}
-            />
-            {gameFileName.endsWith(".swf") ? (
-              <Disc3 className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
-            ) : (
-              <FileCode className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
-            )}
-            <div className="text-center">
-              <p className="font-medium text-foreground text-xs sm:text-sm line-clamp-1" data-testid="text-game-filename">
-                {gameFileName || "Click to upload game file"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                HTML or SWF game file
-              </p>
-            </div>
-          </label>
-          {fileErrors.game && <p className="text-xs sm:text-sm text-destructive mt-2">{fileErrors.game}</p>}
+                }}
+                className="resize-none h-48 text-sm font-mono"
+                data-testid="textarea-html-code"
+              />
+              {fileErrors.game && <p className="text-xs sm:text-sm text-destructive mt-2">{fileErrors.game}</p>}
+            </TabsContent>
+          </Tabs>
         </div>
 
         <div>
