@@ -62,6 +62,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Ensure upload directories exist on startup
   await ensureUploadDirs();
 
+  // Simple hash function for demo (use bcrypt in production)
+  const hashPassword = (pwd: string) => Buffer.from(pwd).toString("base64");
+  
+  // AUTH ENDPOINTS
+  
+  // POST /api/auth/register
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password required" });
+      }
+      if (password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
+      const existing = await storage.getUserByUsername(username);
+      if (existing) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      const passwordHash = hashPassword(password);
+      const user = await storage.createUser(username, passwordHash);
+      res.status(201).json({ id: user.id, username: user.username });
+    } catch (error) {
+      console.error("Error registering user:", error);
+      res.status(400).json({ message: "Failed to register" });
+    }
+  });
+
+  // POST /api/auth/login
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password required" });
+      }
+
+      const passwordHash = hashPassword(password);
+      const user = await storage.authenticateUser(username, passwordHash);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      res.json({ id: user.id, username: user.username });
+    } catch (error) {
+      console.error("Error logging in:", error);
+      res.status(400).json({ message: "Failed to login" });
+    }
+  });
+
   // Serve thumbnails and other assets (but not HTML files)
   app.use("/uploads/thumbnails", async (req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");

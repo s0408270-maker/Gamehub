@@ -56,8 +56,24 @@ export class DatabaseStorage implements IStorage {
     let user = await db.select().from(users).where(eq(users.username, username)).limit(1);
     if (user.length > 0) return user[0];
     
-    const result = await db.insert(users).values({ username }).returning();
+    const result = await db.insert(users).values({ username, password: "" }).returning();
     return result[0];
+  }
+
+  async createUser(username: string, passwordHash: string): Promise<User> {
+    const result = await db.insert(users).values({ username, password: passwordHash }).returning();
+    return result[0];
+  }
+
+  async authenticateUser(username: string, passwordHash: string): Promise<User | undefined> {
+    const result = await db.select().from(users)
+      .where(eq(users.username, username))
+      .limit(1);
+    const user = result[0];
+    if (user && user.password === passwordHash) {
+      return user;
+    }
+    return undefined;
   }
 
   async getUser(id: string): Promise<User | undefined> {

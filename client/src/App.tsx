@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Gamepad2, Users, ChevronDown } from "lucide-react";
+import { Gamepad2, Users, ChevronDown, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import Auth from "@/pages/auth";
 import Home from "@/pages/home";
 import Groups from "@/pages/groups";
 import GroupDetail from "@/pages/group-detail";
@@ -45,6 +46,12 @@ function Header() {
 
   const currentTab = location === "/" ? "games" : location.startsWith("/groups") ? "groups" : "chat";
   const isInGroup = location.startsWith("/groups/") && location !== "/groups";
+
+  const handleLogout = () => {
+    localStorage.clear();
+    queryClient.clear();
+    setLocation("/auth");
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -95,6 +102,18 @@ function Header() {
               {username}
             </div>
           )}
+
+          {username && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              data-testid="button-logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          )}
+          
           <ThemeToggle />
         </div>
       </div>
@@ -124,6 +143,19 @@ function Header() {
 }
 
 function AppContent() {
+  const username = localStorage.getItem("username");
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!username) {
+      setLocation("/auth");
+    }
+  }, [username, setLocation]);
+
+  if (!username) {
+    return <Auth />;
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
