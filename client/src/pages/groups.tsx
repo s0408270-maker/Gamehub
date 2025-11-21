@@ -36,12 +36,14 @@ export default function Groups() {
         username,
       });
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       setGroupName("");
       setGroupDescription("");
       setCreateDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${username}/groups`] });
       toast({ title: "Success", description: "Group created!" });
+      setLocation(`/groups/${data.id}`);
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to create group" });

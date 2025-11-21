@@ -190,6 +190,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/users/:username/groups - Get groups for a user
+  app.get("/api/users/:username/groups", async (req, res) => {
+    try {
+      const user = await storage.getUser(req.params.username);
+      if (!user) return res.json([]);
+      const groups = await storage.getUserGroups(user.id);
+      res.json(groups);
+    } catch (error) {
+      console.error("Error fetching user groups:", error);
+      res.status(500).json({ message: "Failed to fetch user groups" });
+    }
+  });
+
   // POST /api/groups - Create a new group
   app.post("/api/groups", async (req, res) => {
     try {

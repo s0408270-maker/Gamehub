@@ -26,15 +26,18 @@ export default function GroupDetail() {
   // Queries
   const { data: group, isLoading: groupLoading } = useQuery<Group>({
     queryKey: [`/api/groups/${groupId}`],
+    enabled: !!groupId,
   });
 
   const { data: messages = [], isLoading: messagesLoading } = useQuery<Array<Message & { user: { id: string; username: string } }>>({
     queryKey: [`/api/groups/${groupId}/messages`],
     refetchInterval: 2000,
+    enabled: !!groupId,
   });
 
   const { data: games = [], isLoading: gamesLoading } = useQuery<GroupGame[]>({
     queryKey: [`/api/groups/${groupId}/games`],
+    enabled: !!groupId,
   });
 
   // Auto-scroll to bottom
