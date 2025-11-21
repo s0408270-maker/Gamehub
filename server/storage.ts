@@ -1,6 +1,6 @@
-import { type Game, type InsertGame, games, groups, groupMembers, groupGames, messages, users, type Group, type InsertGroup, type GroupGame, type InsertGroupGame, type Message, type InsertMessage, type User, type InsertUser, type GroupMember } from "@shared/schema";
+import { type Game, type InsertGame, games, groups, groupMembers, groupGames, messages, users, type Group, type InsertGroup, type GroupGame, type InsertGroupGame, type Message, type InsertMessage, type User, type InsertUser, type GroupMember, cosmetics, userCosmetics, activeCosmeticsMap, type Cosmetic, type UserCosmetic, type ActiveCosmetic } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 export interface IStorage {
   // Games
@@ -34,6 +34,15 @@ export interface IStorage {
   // Messages
   createMessage(message: InsertMessage): Promise<Message>;
   getGroupMessages(groupId: string, limit?: number): Promise<(Message & { user: User })[]>;
+  
+  // Coins & Cosmetics
+  addCoins(userId: string, amount: number): Promise<User>;
+  getLeaderboard(limit?: number): Promise<User[]>;
+  getAllCosmetics(): Promise<Cosmetic[]>;
+  purchaseCosmetic(userId: string, cosmeticId: string): Promise<UserCosmetic>;
+  getUserCosmetics(userId: string): Promise<UserCosmetic[]>;
+  setActiveCosmetic(userId: string, cosmeticId: string | null): Promise<ActiveCosmetic>;
+  getActiveCosmetic(userId: string): Promise<ActiveCosmetic | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -200,6 +209,65 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
     
     return msgs.map(m => ({ ...m.messages, user: m.users }));
+  }
+
+  // Coins & Cosmetics
+  async addCoins(userId: string, amount: number): Promise<User> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+    
+    const result = await db.update(users)
+      .set({ coins: (user.coins || 0) + amount })
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0];
+  }
+
+  async getLeaderboard(limit = 10): Promise<User[]> {
+    return await db.select().from(users)
+      .orderBy(desc(users.coins))
+      .limit(limit);
+  }
+
+  async getAllCosmetics(): Promise<Cosmetic[]> {
+    return await db.select().from(cosmetics);
+  }
+
+  async purchaseCosmetic(userId: string, cosmeticId: string): Promise<UserCosmetic> {
+    const result = await db.insert(userCosmetics)
+      .values({ userId, cosmeticId })
+      .returning();
+    return result[0];
+  }
+
+  async getUserCosmetics(userId: string): Promise<UserCosmetic[]> {
+    return await db.select().from(userCosmetics)
+      .where(eq(userCosmetics.userId, userId));
+  }
+
+  async setActiveCosmetic(userId: string, cosmeticId: string | null): Promise<ActiveCosmetic> {
+    const existing = await db.select().from(activeCosmeticsMap)
+      .where(eq(activeCosmeticsMap.userId, userId));
+    
+    if (existing.length > 0) {
+      const result = await db.update(activeCosmeticsMap)
+        .set({ activeCosmeticId: cosmeticId })
+        .where(eq(activeCosmeticsMap.userId, userId))
+        .returning();
+      return result[0];
+    } else {
+      const result = await db.insert(activeCosmeticsMap)
+        .values({ userId, activeCosmeticId: cosmeticId })
+        .returning();
+      return result[0];
+    }
+  }
+
+  async getActiveCosmetic(userId: string): Promise<ActiveCosmetic | undefined> {
+    const result = await db.select().from(activeCosmeticsMap)
+      .where(eq(activeCosmeticsMap.userId, userId))
+      .limit(1);
+    return result[0];
   }
 }
 
