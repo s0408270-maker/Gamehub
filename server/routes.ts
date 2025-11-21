@@ -38,8 +38,10 @@ const upload = multer({
   }),
   fileFilter: (req, file, cb) => {
     if (file.fieldname === "gameFile") {
-      if (file.mimetype === "text/html" || file.originalname.endsWith(".html") || 
-          file.mimetype === "application/x-shockwave-flash" || file.originalname.endsWith(".swf")) {
+      const isHtml = file.originalname.endsWith(".html") || file.mimetype === "text/html" || file.mimetype === "text/plain";
+      const isSwf = file.originalname.endsWith(".swf") || file.mimetype === "application/x-shockwave-flash" || file.mimetype === "application/octet-stream";
+      
+      if (isHtml || isSwf) {
         cb(null, true);
       } else {
         cb(new Error("Only HTML or SWF files are allowed"));
