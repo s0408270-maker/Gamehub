@@ -15,10 +15,16 @@ import { queryClient } from "@/lib/queryClient";
 const uploadSchema = z.object({
   title: z.string().min(1, "Game title is required").max(100, "Title is too long"),
   htmlFile: z.instanceof(File).refine(
+    (file) => file.size > 0,
+    "HTML file is required"
+  ).refine(
     (file) => file.type === "text/html" || file.name.endsWith(".html"),
     "File must be an HTML file"
   ),
   thumbnail: z.instanceof(File).refine(
+    (file) => file.size > 0,
+    "Thumbnail is required"
+  ).refine(
     (file) => file.type.startsWith("image/"),
     "File must be an image"
   ),
@@ -89,12 +95,11 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Alert className="border-yellow-500/50 bg-yellow-500/10" data-testid="alert-security-warning">
-          <AlertTriangle className="h-4 w-4 text-yellow-500" />
-          <AlertDescription className="text-sm text-foreground ml-2">
-            <strong>Security Notice:</strong> Only upload games you created or trust completely. 
-            Uploaded HTML files will execute with your browser's privileges.
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
+        <Alert className="border-yellow-500/50 bg-yellow-500/10 text-sm sm:text-base" data-testid="alert-security-warning">
+          <AlertTriangle className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+          <AlertDescription className="text-xs sm:text-sm text-foreground ml-2">
+            <strong>Security Notice:</strong> Only upload games you trust. HTML files execute with browser privileges.
           </AlertDescription>
         </Alert>
 
@@ -103,16 +108,16 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
           name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-base font-semibold">Game Title</FormLabel>
+              <FormLabel className="text-sm sm:text-base font-semibold">Game Title</FormLabel>
               <FormControl>
                 <Input 
                   placeholder="Enter game name..." 
                   {...field} 
-                  className="h-11 text-base"
+                  className="h-9 sm:h-11 text-sm sm:text-base"
                   data-testid="input-game-title"
                 />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-xs sm:text-sm" />
             </FormItem>
           )}
         />
@@ -122,7 +127,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
           name="htmlFile"
           render={({ field: { value, onChange, ...field } }) => (
             <FormItem>
-              <FormLabel className="text-base font-semibold">HTML Game File</FormLabel>
+              <FormLabel className="text-sm sm:text-base font-semibold">HTML Game File</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
@@ -142,22 +147,22 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                   />
                   <Label
                     htmlFor="html-file-input"
-                    className="flex items-center justify-center gap-3 p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all"
+                    className="flex items-center justify-center gap-2 sm:gap-3 p-4 sm:p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all"
                     data-testid="label-html-upload"
                   >
-                    <FileCode className="w-8 h-8 text-muted-foreground" />
+                    <FileCode className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
                     <div className="text-center">
-                      <p className="font-medium text-foreground" data-testid="text-html-filename">
+                      <p className="font-medium text-foreground text-xs sm:text-sm line-clamp-1" data-testid="text-html-filename">
                         {htmlFileName || "Click to upload HTML file"}
                       </p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Your game's main HTML file
+                      <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
+                        HTML game file
                       </p>
                     </div>
                   </Label>
                 </div>
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-xs sm:text-sm" />
             </FormItem>
           )}
         />
@@ -167,7 +172,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
           name="thumbnail"
           render={({ field: { value, onChange, ...field } }) => (
             <FormItem>
-              <FormLabel className="text-base font-semibold">Thumbnail Image</FormLabel>
+              <FormLabel className="text-sm sm:text-base font-semibold">Thumbnail Image</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
@@ -192,7 +197,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                   />
                   <Label
                     htmlFor="thumbnail-input"
-                    className="flex items-center justify-center gap-3 p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all"
+                    className="flex items-center justify-center gap-2 sm:gap-3 p-4 sm:p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all"
                     data-testid="label-thumbnail-upload"
                   >
                     {thumbnailPreview ? (
@@ -200,25 +205,25 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                         <img 
                           src={thumbnailPreview} 
                           alt="Thumbnail preview" 
-                          className="w-full h-48 object-cover rounded-md mb-3"
+                          className="w-full h-24 sm:h-48 object-cover rounded-md mb-2 sm:mb-3"
                           data-testid="img-thumbnail-preview"
                         />
-                        <p className="font-medium text-foreground text-center" data-testid="text-thumbnail-filename">
+                        <p className="font-medium text-foreground text-center text-xs sm:text-sm line-clamp-1" data-testid="text-thumbnail-filename">
                           {thumbnailFileName}
                         </p>
-                        <p className="text-sm text-muted-foreground text-center mt-1">
+                        <p className="text-xs text-muted-foreground text-center mt-0.5 sm:mt-1">
                           Click to change
                         </p>
                       </div>
                     ) : (
                       <>
-                        <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                        <ImageIcon className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
                         <div className="text-center">
-                          <p className="font-medium text-foreground">
-                            Click to upload thumbnail
+                          <p className="font-medium text-foreground text-xs sm:text-sm">
+                            Upload thumbnail
                           </p>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            16:9 aspect ratio recommended
+                          <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
+                            Image file
                           </p>
                         </div>
                       </>
@@ -226,27 +231,28 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                   </Label>
                 </div>
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-xs sm:text-sm" />
             </FormItem>
           )}
         />
 
-        <div className="flex gap-3 pt-4">
+        <div className="flex gap-2 sm:gap-3 pt-2 sm:pt-4">
           <Button 
             type="submit" 
-            className="flex-1 h-11 text-base"
+            className="flex-1 h-9 sm:h-11 text-sm sm:text-base"
             disabled={uploadMutation.isPending}
             data-testid="button-submit-upload"
           >
             {uploadMutation.isPending ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Uploading...
+                <Loader2 className="w-3 sm:w-4 h-3 sm:h-4 mr-1 sm:mr-2 animate-spin" />
+                <span className="hidden sm:inline">Uploading...</span>
+                <span className="inline sm:hidden">Upload...</span>
               </>
             ) : (
               <>
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Game
+                <Upload className="w-3 sm:w-4 h-3 sm:h-4 mr-1 sm:mr-2" />
+                Upload
               </>
             )}
           </Button>

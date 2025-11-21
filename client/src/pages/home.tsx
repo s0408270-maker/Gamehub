@@ -171,9 +171,9 @@ export default function Home() {
                     Upload First Game
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold">Upload New Game</DialogTitle>
+                    <DialogTitle className="text-xl sm:text-2xl font-bold">Upload New Game</DialogTitle>
                   </DialogHeader>
                   <UploadGameForm onSuccess={() => setUploadDialogOpen(false)} />
                 </DialogContent>
