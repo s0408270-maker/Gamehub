@@ -139,13 +139,17 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
 
         <div>
           <Label className="text-sm sm:text-base font-semibold block mb-2">HTML Game File</Label>
-          <div className="relative">
+          <label
+            htmlFor="html-file-input"
+            className="flex items-center justify-center gap-2 sm:gap-3 p-4 sm:p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all block"
+            data-testid="label-html-upload"
+          >
             <input
               type="file"
-              accept=".html,text/html,text/plain"
-              className="hidden"
+              accept=".html"
               id="html-file-input"
               data-testid="input-html-file"
+              style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
               onChange={(e) => {
                 const file = (e.target as HTMLInputElement).files?.[0];
                 if (file) {
@@ -155,34 +159,32 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                 }
               }}
             />
-            <Label
-              htmlFor="html-file-input"
-              className="flex items-center justify-center gap-2 sm:gap-3 p-4 sm:p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all"
-              data-testid="label-html-upload"
-            >
-              <FileCode className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
-              <div className="text-center">
-                <p className="font-medium text-foreground text-xs sm:text-sm line-clamp-1" data-testid="text-html-filename">
-                  {htmlFileName || "Click to upload HTML file"}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                  HTML game file
-                </p>
-              </div>
-            </Label>
-          </div>
+            <FileCode className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
+            <div className="text-center">
+              <p className="font-medium text-foreground text-xs sm:text-sm line-clamp-1" data-testid="text-html-filename">
+                {htmlFileName || "Click to upload HTML file"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
+                HTML game file
+              </p>
+            </div>
+          </label>
           {fileErrors.html && <p className="text-xs sm:text-sm text-destructive mt-2">{fileErrors.html}</p>}
         </div>
 
         <div>
           <Label className="text-sm sm:text-base font-semibold block mb-2">Thumbnail Image</Label>
-          <div className="relative">
+          <label
+            htmlFor="thumbnail-input"
+            className="flex items-center justify-center gap-2 sm:gap-3 p-4 sm:p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all block"
+            data-testid="label-thumbnail-upload"
+          >
             <input
               type="file"
               accept="image/*"
-              className="hidden"
               id="thumbnail-input"
               data-testid="input-thumbnail"
+              style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
               onChange={(e) => {
                 const file = (e.target as HTMLInputElement).files?.[0];
                 if (file) {
@@ -197,41 +199,35 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                 }
               }}
             />
-            <Label
-              htmlFor="thumbnail-input"
-              className="flex items-center justify-center gap-2 sm:gap-3 p-4 sm:p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all"
-              data-testid="label-thumbnail-upload"
-            >
-              {thumbnailPreview ? (
-                <div className="w-full">
-                  <img 
-                    src={thumbnailPreview} 
-                    alt="Thumbnail preview" 
-                    className="w-full h-24 sm:h-48 object-cover rounded-md mb-2 sm:mb-3"
-                    data-testid="img-thumbnail-preview"
-                  />
-                  <p className="font-medium text-foreground text-center text-xs sm:text-sm line-clamp-1" data-testid="text-thumbnail-filename">
-                    {thumbnailFileName}
+            {thumbnailPreview ? (
+              <div className="w-full">
+                <img 
+                  src={thumbnailPreview} 
+                  alt="Thumbnail preview" 
+                  className="w-full h-24 sm:h-48 object-cover rounded-md mb-2 sm:mb-3"
+                  data-testid="img-thumbnail-preview"
+                />
+                <p className="font-medium text-foreground text-center text-xs sm:text-sm line-clamp-1" data-testid="text-thumbnail-filename">
+                  {thumbnailFileName}
+                </p>
+                <p className="text-xs text-muted-foreground text-center mt-0.5 sm:mt-1">
+                  Click to change
+                </p>
+              </div>
+            ) : (
+              <>
+                <ImageIcon className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
+                <div className="text-center">
+                  <p className="font-medium text-foreground text-xs sm:text-sm">
+                    Upload thumbnail
                   </p>
-                  <p className="text-xs text-muted-foreground text-center mt-0.5 sm:mt-1">
-                    Click to change
+                  <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
+                    Image file
                   </p>
                 </div>
-              ) : (
-                <>
-                  <ImageIcon className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
-                  <div className="text-center">
-                    <p className="font-medium text-foreground text-xs sm:text-sm">
-                      Upload thumbnail
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                      Image file
-                    </p>
-                  </div>
-                </>
-              )}
-            </Label>
-          </div>
+              </>
+            )}
+          </label>
           {fileErrors.thumbnail && <p className="text-xs sm:text-sm text-destructive mt-2">{fileErrors.thumbnail}</p>}
         </div>
 
