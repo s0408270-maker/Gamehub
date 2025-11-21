@@ -14,35 +14,24 @@ import { queryClient } from "@/lib/queryClient";
 
 const uploadSchema = z.object({
   title: z.string().min(1, "Game title is required").max(100, "Title is too long"),
-  htmlFile: z.instanceof(File).refine(
-    (file) => file.size > 0,
-    "HTML file is required"
-  ).refine(
-    (file) => file.type === "text/html" || file.name.endsWith(".html"),
-    "File must be an HTML file"
-  ),
-  thumbnail: z.instanceof(File).refine(
-    (file) => file.size > 0,
-    "Thumbnail is required"
-  ).refine(
-    (file) => file.type.startsWith("image/"),
-    "File must be an image"
-  ),
 });
 
-type UploadFormData = z.infer<typeof uploadSchema>;
+type TitleFormData = z.infer<typeof uploadSchema>;
 
 interface UploadGameFormProps {
   onSuccess?: () => void;
 }
 
 export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
+  const [htmlFile, setHtmlFile] = useState<File | null>(null);
   const [htmlFileName, setHtmlFileName] = useState<string>("");
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailFileName, setThumbnailFileName] = useState<string>("");
   const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
+  const [fileErrors, setFileErrors] = useState<{ html?: string; thumbnail?: string }>({});
   const { toast } = useToast();
 
-  const form = useForm<UploadFormData>({
+  const form = useForm<TitleFormData>({
     resolver: zodResolver(uploadSchema),
     defaultValues: {
       title: "",
@@ -50,11 +39,14 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
   });
 
   const uploadMutation = useMutation({
-    mutationFn: async (data: UploadFormData) => {
+    mutationFn: async (data: TitleFormData) => {
+      if (!htmlFile) throw new Error("HTML file is required");
+      if (!thumbnailFile) throw new Error("Thumbnail is required");
+
       const formData = new FormData();
       formData.append("title", data.title);
-      formData.append("htmlFile", data.htmlFile);
-      formData.append("thumbnail", data.thumbnail);
+      formData.append("htmlFile", htmlFile);
+      formData.append("thumbnail", thumbnailFile);
 
       const response = await fetch("/api/games", {
         method: "POST",
@@ -75,9 +67,12 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
         description: "Your game has been uploaded successfully.",
       });
       form.reset();
+      setHtmlFile(null);
       setHtmlFileName("");
+      setThumbnailFile(null);
       setThumbnailFileName("");
       setThumbnailPreview("");
+      setFileErrors({});
       onSuccess?.();
     },
     onError: (error: Error) => {
@@ -89,7 +84,27 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
     },
   });
 
-  const onSubmit = (data: UploadFormData) => {
+  const onSubmit = (data: TitleFormData) => {
+    const errors: { html?: string; thumbnail?: string } = {};
+    
+    if (!htmlFile) {
+      errors.html = "HTML file is required";
+    } else if (!htmlFile.name.endsWith(".html")) {
+      errors.html = "File must be an HTML file";
+    }
+    
+    if (!thumbnailFile) {
+      errors.thumbnail = "Thumbnail is required";
+    } else if (!thumbnailFile.type.startsWith("image/")) {
+      errors.thumbnail = "File must be an image";
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setFileErrors(errors);
+      return;
+    }
+
+    setFileErrors({});
     uploadMutation.mutate(data);
   };
 
@@ -122,117 +137,103 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="htmlFile"
-          render={({ field: { onChange } }) => (
-            <FormItem>
-              <FormLabel className="text-sm sm:text-base font-semibold">HTML Game File</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Input
-                    type="file"
-                    accept=".html"
-                    className="hidden"
-                    id="html-file-input"
-                    data-testid="input-html-file"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        onChange(file);
-                        setHtmlFileName(file.name);
-                      }
-                    }}
-                  />
-                  <Label
-                    htmlFor="html-file-input"
-                    className="flex items-center justify-center gap-2 sm:gap-3 p-4 sm:p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all"
-                    data-testid="label-html-upload"
-                  >
-                    <FileCode className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
-                    <div className="text-center">
-                      <p className="font-medium text-foreground text-xs sm:text-sm line-clamp-1" data-testid="text-html-filename">
-                        {htmlFileName || "Click to upload HTML file"}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                        HTML game file
-                      </p>
-                    </div>
-                  </Label>
-                </div>
-              </FormControl>
-              <FormMessage className="text-xs sm:text-sm" />
-            </FormItem>
-          )}
-        />
+        <div>
+          <Label className="text-sm sm:text-base font-semibold block mb-2">HTML Game File</Label>
+          <div className="relative">
+            <Input
+              type="file"
+              accept=".html"
+              className="hidden"
+              id="html-file-input"
+              data-testid="input-html-file"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setHtmlFile(file);
+                  setHtmlFileName(file.name);
+                  setFileErrors(prev => ({ ...prev, html: undefined }));
+                }
+              }}
+            />
+            <Label
+              htmlFor="html-file-input"
+              className="flex items-center justify-center gap-2 sm:gap-3 p-4 sm:p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all"
+              data-testid="label-html-upload"
+            >
+              <FileCode className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
+              <div className="text-center">
+                <p className="font-medium text-foreground text-xs sm:text-sm line-clamp-1" data-testid="text-html-filename">
+                  {htmlFileName || "Click to upload HTML file"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
+                  HTML game file
+                </p>
+              </div>
+            </Label>
+          </div>
+          {fileErrors.html && <p className="text-xs sm:text-sm text-destructive mt-2">{fileErrors.html}</p>}
+        </div>
 
-        <FormField
-          control={form.control}
-          name="thumbnail"
-          render={({ field: { onChange } }) => (
-            <FormItem>
-              <FormLabel className="text-sm sm:text-base font-semibold">Thumbnail Image</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Input
-                    type="file"
-                    accept="image/png,image/jpeg,image/gif,image/webp"
-                    className="hidden"
-                    id="thumbnail-input"
-                    data-testid="input-thumbnail"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        onChange(file);
-                        setThumbnailFileName(file.name);
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setThumbnailPreview(reader.result as string);
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
+        <div>
+          <Label className="text-sm sm:text-base font-semibold block mb-2">Thumbnail Image</Label>
+          <div className="relative">
+            <Input
+              type="file"
+              accept="image/png,image/jpeg,image/gif,image/webp"
+              className="hidden"
+              id="thumbnail-input"
+              data-testid="input-thumbnail"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setThumbnailFile(file);
+                  setThumbnailFileName(file.name);
+                  setFileErrors(prev => ({ ...prev, thumbnail: undefined }));
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    setThumbnailPreview(reader.result as string);
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+            />
+            <Label
+              htmlFor="thumbnail-input"
+              className="flex items-center justify-center gap-2 sm:gap-3 p-4 sm:p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all"
+              data-testid="label-thumbnail-upload"
+            >
+              {thumbnailPreview ? (
+                <div className="w-full">
+                  <img 
+                    src={thumbnailPreview} 
+                    alt="Thumbnail preview" 
+                    className="w-full h-24 sm:h-48 object-cover rounded-md mb-2 sm:mb-3"
+                    data-testid="img-thumbnail-preview"
                   />
-                  <Label
-                    htmlFor="thumbnail-input"
-                    className="flex items-center justify-center gap-2 sm:gap-3 p-4 sm:p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all"
-                    data-testid="label-thumbnail-upload"
-                  >
-                    {thumbnailPreview ? (
-                      <div className="w-full">
-                        <img 
-                          src={thumbnailPreview} 
-                          alt="Thumbnail preview" 
-                          className="w-full h-24 sm:h-48 object-cover rounded-md mb-2 sm:mb-3"
-                          data-testid="img-thumbnail-preview"
-                        />
-                        <p className="font-medium text-foreground text-center text-xs sm:text-sm line-clamp-1" data-testid="text-thumbnail-filename">
-                          {thumbnailFileName}
-                        </p>
-                        <p className="text-xs text-muted-foreground text-center mt-0.5 sm:mt-1">
-                          Click to change
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        <ImageIcon className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
-                        <div className="text-center">
-                          <p className="font-medium text-foreground text-xs sm:text-sm">
-                            Upload thumbnail
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                            Image file
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </Label>
+                  <p className="font-medium text-foreground text-center text-xs sm:text-sm line-clamp-1" data-testid="text-thumbnail-filename">
+                    {thumbnailFileName}
+                  </p>
+                  <p className="text-xs text-muted-foreground text-center mt-0.5 sm:mt-1">
+                    Click to change
+                  </p>
                 </div>
-              </FormControl>
-              <FormMessage className="text-xs sm:text-sm" />
-            </FormItem>
-          )}
-        />
+              ) : (
+                <>
+                  <ImageIcon className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
+                  <div className="text-center">
+                    <p className="font-medium text-foreground text-xs sm:text-sm">
+                      Upload thumbnail
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
+                      Image file
+                    </p>
+                  </div>
+                </>
+              )}
+            </Label>
+          </div>
+          {fileErrors.thumbnail && <p className="text-xs sm:text-sm text-destructive mt-2">{fileErrors.thumbnail}</p>}
+        </div>
 
         <div className="flex gap-2 sm:gap-3 pt-2 sm:pt-4">
           <Button 
