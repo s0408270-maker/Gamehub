@@ -260,6 +260,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POST /api/games/paste-code - Create a game from pasted HTML code
+  app.post(
+    "/api/games/paste-code",
+    upload.single("thumbnail"),
+    async (req, res) => {
+      try {
+        const { title, username, htmlCode } = req.body;
+        const thumbnailFile = req.file;
+
+        if (!title || !username || !htmlCode) {
+          return res.status(400).json({ message: "Title, username, and HTML code are required" });
+        }
+
+        if (!thumbnailFile) {
+          return res.status(400).json({ message: "Thumbnail is required" });
+        }
+
+        const user = await storage.getOrCreateUser(username);
+
+        // Save HTML code to file
+        await ensureUploadDirs();
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        const htmlFilename = `gameFile-${uniqueSuffix}.html`;
+        const htmlFilePath = path.join(gamesDir, htmlFilename);
+        
+        await fs.writeFile(htmlFilePath, htmlCode, "utf-8");
+
+        // Create paths relative to the uploads directory
+        const htmlPath = `/uploads/games/${htmlFilename}`;
+        const thumbnailPath = `/uploads/thumbnails/${thumbnailFile.filename}`;
+
+        const gameData = insertGameSchema.parse({
+          title,
+          htmlPath,
+          thumbnail: thumbnailPath,
+          gameType: "html",
+          createdBy: user.id,
+        });
+
+        const game = await storage.createGame(gameData);
+        
+        res.status(201).json(game);
+      } catch (error) {
+        console.error("Error creating game from code:", error);
+        if (error instanceof Error) {
+          res.status(400).json({ message: error.message });
+        } else {
+          res.status(500).json({ message: "Failed to create game" });
+        }
+      }
+    }
+  );
+
   // GROUP ENDPOINTS
 
   // GET /api/groups - Get all groups
