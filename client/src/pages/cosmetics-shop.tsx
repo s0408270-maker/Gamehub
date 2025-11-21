@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Zap, ShoppingCart, Check } from "lucide-react";
+import { Zap, ShoppingCart, Check, Star, Zap as ZapIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -7,62 +7,82 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Cosmetic, UserCosmetic } from "@shared/schema";
 
-// Import all cosmetic thumbnail images
-import neonCyberpunk from "@assets/generated_images/neon_cyberpunk_theme.png";
-import darkModePro from "@assets/generated_images/dark_mode_pro_theme.png";
-import forestGreen from "@assets/generated_images/forest_green_theme.png";
-import oceanWave from "@assets/generated_images/ocean_wave_theme.png";
-import sunsetGold from "@assets/generated_images/sunset_gold_theme.png";
-import cosmicPurple from "@assets/generated_images/cosmic_purple_theme.png";
-import proPlayer from "@assets/generated_images/pro_player_badge.png";
-import speedRunner from "@assets/generated_images/speed_runner_badge.png";
-import collector from "@assets/generated_images/collector_badge.png";
-import legend from "@assets/generated_images/legend_badge.png";
-import founder from "@assets/generated_images/founder_badge.png";
-import coinMaster from "@assets/generated_images/coin_master_badge.png";
-import goldenFrame from "@assets/generated_images/golden_frame.png";
-import pixelArt from "@assets/generated_images/pixel_art_frame.png";
-import neonGlow from "@assets/generated_images/neon_glow_frame.png";
-import diamond from "@assets/generated_images/diamond_frame.png";
-import fire from "@assets/generated_images/fire_frame.png";
-import crystal from "@assets/generated_images/crystal_frame.png";
-import sword from "@assets/generated_images/sword_cursor.png";
-import fireball from "@assets/generated_images/fireball_cursor.png";
-import lightning from "@assets/generated_images/lightning_cursor.png";
-import meteor from "@assets/generated_images/meteor_cursor.png";
-import ghost from "@assets/generated_images/ghost_cursor.png";
-import sparkle from "@assets/generated_images/sparkle_cursor.png";
-import dragon from "@assets/generated_images/dragon_cursor.png";
-import pixelHeart from "@assets/generated_images/pixel_heart_cursor.png";
-
-const cosmeticImages: Record<string, string> = {
-  'Neon Cyberpunk': neonCyberpunk,
-  'Dark Mode Pro': darkModePro,
-  'Forest Green': forestGreen,
-  'Ocean Wave': oceanWave,
-  'Sunset Gold': sunsetGold,
-  'Cosmic Purple': cosmicPurple,
-  'Pro Player': proPlayer,
-  'Speed Runner': speedRunner,
-  'Collector': collector,
-  'Legend': legend,
-  'Founder': founder,
-  'Coin Master': coinMaster,
-  'Golden Frame': goldenFrame,
-  'Pixel Art': pixelArt,
-  'Neon Glow': neonGlow,
-  'Diamond': diamond,
-  'Fire': fire,
-  'Crystal': crystal,
-  'Sword Cursor': sword,
-  'Fire Ball': fireball,
-  'Lightning Bolt': lightning,
-  'Meteor': meteor,
-  'Ghost': ghost,
-  'Sparkle': sparkle,
-  'Dragon': dragon,
-  'Pixel Heart': pixelHeart,
-};
+// Component to render cosmetic previews
+function CosmeticPreview({ cosmetic }: { cosmetic: Cosmetic }) {
+  if (cosmetic.type === 'theme') {
+    const themeColors: Record<string, { bg: string; text: string; accent: string }> = {
+      'cyberpunk': { bg: '#0a0e27', text: '#00ff88', accent: '#ff00ff' },
+      'dark_pro': { bg: '#0d0d0d', text: '#e0e0e0', accent: '#666' },
+      'forest': { bg: '#1a3a2a', text: '#90ee90', accent: '#228b22' },
+      'ocean': { bg: '#001a4d', text: '#87ceeb', accent: '#00bfff' },
+      'sunset': { bg: '#2d1b1a', text: '#ffd700', accent: '#ff8c00' },
+      'cosmic': { bg: '#1a0033', text: '#b19cd9', accent: '#7b2cbf' },
+    };
+    const theme = themeColors[cosmetic.value] || themeColors['dark_pro'];
+    return (
+      <div className="w-full h-48 rounded-lg overflow-hidden" style={{ background: theme.bg }}>
+        <div className="w-full h-full flex flex-col items-center justify-center p-4">
+          <div style={{ color: theme.text }} className="text-center space-y-2">
+            <p className="text-sm font-semibold">Text Color</p>
+            <div className="flex gap-2 justify-center">
+              <div className="w-8 h-8 rounded" style={{ background: theme.text }}></div>
+              <div className="w-8 h-8 rounded" style={{ background: theme.accent }}></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  } else if (cosmetic.type === 'badge') {
+    const badgeIcons: Record<string, string> = {
+      'pro_player': '⭐',
+      'speed_runner': '⚡',
+      'collector': '🎮',
+      'legend': '👑',
+      'founder': '🏅',
+      'coin_master': '💰',
+    };
+    const icon = badgeIcons[cosmetic.value] || '✨';
+    return (
+      <div className="w-full h-48 bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg flex items-center justify-center">
+        <div className="text-6xl">{icon}</div>
+      </div>
+    );
+  } else if (cosmetic.type === 'profile_frame') {
+    const frameStyles: Record<string, string> = {
+      'gold_frame': 'border-4 border-yellow-500 shadow-lg shadow-yellow-500/50',
+      'pixel_frame': 'border-4 border-purple-400 bg-purple-400/10',
+      'neon_frame': 'border-4 border-cyan-400 shadow-lg shadow-cyan-400/50',
+      'diamond_frame': 'border-4 border-blue-300 shadow-lg shadow-blue-300/50',
+      'fire_frame': 'border-4 border-red-500 shadow-lg shadow-red-500/50',
+      'crystal_frame': 'border-4 border-cyan-200 shadow-lg shadow-cyan-200/50',
+    };
+    const frameClass = frameStyles[cosmetic.value] || frameStyles['gold_frame'];
+    return (
+      <div className={`w-full h-48 bg-secondary rounded-lg ${frameClass} flex items-center justify-center`}>
+        <div className="text-center text-muted-foreground">Frame Preview</div>
+      </div>
+    );
+  } else if (cosmetic.type === 'cursor') {
+    const cursorEmojis: Record<string, string> = {
+      'sword': '⚔️',
+      'fireball': '🔥',
+      'lightning': '⚡',
+      'meteor': '☄️',
+      'ghost': '👻',
+      'sparkle': '✨',
+      'dragon': '🐉',
+      'pixel_heart': '❤️',
+    };
+    const emoji = cursorEmojis[cosmetic.value] || '🖱️';
+    return (
+      <div className="w-full h-48 bg-secondary rounded-lg flex items-center justify-center cursor-pointer hover:bg-secondary/80 transition-colors">
+        <div className="text-6xl">{emoji}</div>
+      </div>
+    );
+  }
+  
+  return <div className="w-full h-48 bg-secondary rounded-lg"></div>;
+}
 
 export default function CosmeticsShop() {
   const { toast } = useToast();
@@ -169,14 +189,7 @@ export default function CosmeticsShop() {
 
             return (
               <Card key={cosmetic.id} data-testid={`card-cosmetic-${cosmetic.id}`} className="overflow-hidden">
-                <div className="w-full h-48 bg-secondary overflow-hidden flex items-center justify-center">
-                  <img 
-                    src={cosmeticImages[cosmetic.name] || cosmetic.thumbnail || ""} 
-                    alt={cosmetic.name}
-                    className="w-full h-full object-cover"
-                    data-testid={`img-cosmetic-${cosmetic.id}`}
-                  />
-                </div>
+                <CosmeticPreview cosmetic={cosmetic} />
                 <CardHeader>
                   <CardTitle className="text-lg">{cosmetic.name}</CardTitle>
                 </CardHeader>
