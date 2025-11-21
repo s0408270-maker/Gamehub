@@ -4,7 +4,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 import { storage } from "./storage";
-import { insertGameSchema } from "@shared/schema";
+import { insertGameSchema, insertGroupSchema, insertGroupGameSchema, insertMessageSchema } from "@shared/schema";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 const gamesDir = path.join(uploadDir, "games");
@@ -176,6 +176,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   );
+
+  // GROUP ENDPOINTS
+
+  // GET /api/groups - Get all groups
+  app.get("/api/groups", async (req, res) => {
+    try {
+      const groups = await storage.getAllGroups();
+      res.json(groups);
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+      res.status(500).json({ message: "Failed to fetch groups" });
+    }
+  });
+
+  // POST /api/groups - Create a new group
+  app.post("/api/groups", async (req, res) => {
+    try {
+      const { name, description, username } = req.body;
+      if (!name || !username) {
+        return res.status(400).json({ message: "Name and username required" });
+      }
+
+      const user = await storage.getOrCreateUser(username);
+      const groupData = insertGroupSchema.parse({
+        name,
+        description: description || "",
+        createdBy: user.id,
+      });
+
+      const group = await storage.createGroup(groupData);
+      res.status(201).json(group);
+    } catch (error) {
+      console.error("Error creating group:", error);
+      res.status(400).json({ message: "Failed to create group" });
+    }
+  });
+
+  // GET /api/groups/:groupId - Get group details
+  app.get("/api/groups/:groupId", async (req, res) => {
+    try {
+      const group = await storage.getGroup(req.params.groupId);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+      res.json(group);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch group" });
+    }
+  });
+
+  // GET /api/groups/:groupId/members - Get group members
+  app.get("/api/groups/:groupId/members", async (req, res) => {
+    try {
+      const members = await storage.getGroupMembers(req.params.groupId);
+      res.json(members);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch members" });
+    }
+  });
+
+  // POST /api/groups/:groupId/join - Join a group
+  app.post("/api/groups/:groupId/join", async (req, res) => {
+    try {
+      const { username } = req.body;
+      if (!username) return res.status(400).json({ message: "Username required" });
+
+      const user = await storage.getOrCreateUser(username);
+      const isMember = await storage.isGroupMember(req.params.groupId, user.id);
+      
+      if (isMember) return res.status(400).json({ message: "Already a member" });
+
+      await storage.addGroupMember(req.params.groupId, user.id);
+      res.json({ message: "Joined group" });
+    } catch (error) {
+      res.status(400).json({ message: "Failed to join group" });
+    }
+  });
+
+  // GET /api/groups/:groupId/games - Get group games
+  app.get("/api/groups/:groupId/games", async (req, res) => {
+    try {
+      const games = await storage.getGroupGames(req.params.groupId);
+      res.json(games);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch group games" });
+    }
+  });
+
+  // POST /api/groups/:groupId/games - Upload game to group
+  app.post(
+    "/api/groups/:groupId/games",
+    upload.fields([
+      { name: "htmlFile", maxCount: 1 },
+      { name: "thumbnail", maxCount: 1 },
+    ]),
+    async (req, res) => {
+      try {
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+        const { title, username } = req.body;
+
+        if (!files.htmlFile || !files.thumbnail) {
+          return res.status(400).json({ message: "Both files required" });
+        }
+        if (!title || !username) {
+          return res.status(400).json({ message: "Title and username required" });
+        }
+
+        const user = await storage.getOrCreateUser(username);
+        const htmlPath = `/uploads/games/${files.htmlFile[0].filename}`;
+        const thumbnailPath = `/uploads/thumbnails/${files.thumbnail[0].filename}`;
+
+        const gameData = insertGroupGameSchema.parse({
+          groupId: req.params.groupId,
+          title,
+          htmlPath,
+          thumbnail: thumbnailPath,
+          uploadedBy: user.id,
+        });
+
+        const game = await storage.createGroupGame(gameData);
+        res.status(201).json(game);
+      } catch (error) {
+        console.error("Error uploading group game:", error);
+        res.status(400).json({ message: "Failed to upload game" });
+      }
+    }
+  );
+
+  // GET /api/groups/:groupId/messages - Get group messages
+  app.get("/api/groups/:groupId/messages", async (req, res) => {
+    try {
+      const messages = await storage.getGroupMessages(req.params.groupId);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // POST /api/groups/:groupId/messages - Send message
+  app.post("/api/groups/:groupId/messages", async (req, res) => {
+    try {
+      const { content, username } = req.body;
+      if (!content || !username) {
+        return res.status(400).json({ message: "Content and username required" });
+      }
+
+      const user = await storage.getOrCreateUser(username);
+      const messageData = insertMessageSchema.parse({
+        groupId: req.params.groupId,
+        userId: user.id,
+        content,
+      });
+
+      const message = await storage.createMessage(messageData);
+      res.status(201).json(message);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to send message" });
+    }
+  });
 
   const httpServer = createServer(app);
 
