@@ -1,5 +1,6 @@
-import { type Game, type InsertGame } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { type Game, type InsertGame, games } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   getAllGames(): Promise<Game[]>;
@@ -7,27 +8,20 @@ export interface IStorage {
   createGame(game: InsertGame): Promise<Game>;
 }
 
-export class MemStorage implements IStorage {
-  private games: Map<string, Game>;
-
-  constructor() {
-    this.games = new Map();
-  }
-
+export class DatabaseStorage implements IStorage {
   async getAllGames(): Promise<Game[]> {
-    return Array.from(this.games.values());
+    return await db.select().from(games);
   }
 
   async getGame(id: string): Promise<Game | undefined> {
-    return this.games.get(id);
+    const result = await db.select().from(games).where(eq(games.id, id)).limit(1);
+    return result[0];
   }
 
   async createGame(insertGame: InsertGame): Promise<Game> {
-    const id = randomUUID();
-    const game: Game = { ...insertGame, id };
-    this.games.set(id, game);
-    return game;
+    const result = await db.insert(games).values(insertGame).returning();
+    return result[0];
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
