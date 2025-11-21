@@ -125,7 +125,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
         <FormField
           control={form.control}
           name="htmlFile"
-          render={({ field: { onChange, ...field } }) => (
+          render={({ field: { onChange } }) => (
             <FormItem>
               <FormLabel className="text-sm sm:text-base font-semibold">HTML Game File</FormLabel>
               <FormControl>
@@ -143,7 +143,6 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                         setHtmlFileName(file.name);
                       }
                     }}
-                    {...field}
                   />
                   <Label
                     htmlFor="html-file-input"
