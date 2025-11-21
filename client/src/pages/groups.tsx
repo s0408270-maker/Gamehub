@@ -29,44 +29,51 @@ export default function Groups() {
       let user = username;
       if (!user) {
         user = prompt("Please enter a username:");
-        if (!user) return;
+        if (!user) throw new Error("Username is required");
         localStorage.setItem("username", user);
       }
-      return await apiRequest("POST", "/api/groups", {
+      const res = await apiRequest("POST", "/api/groups", {
         name: groupName,
         description: groupDescription,
         username: user,
       });
+      return await res.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: () => {
       setGroupName("");
       setGroupDescription("");
       setCreateDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${username}/groups`] });
+      if (username) {
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${username}/groups`] });
+      }
       toast({ title: "Success", description: "Group created!" });
-      setLocation(`/groups/${data.id}`);
     },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to create group" });
+    onError: (error: any) => {
+      toast({ title: "Error", description: error?.message || "Failed to create group" });
     },
   });
 
   const joinGroupMutation = useMutation({
     mutationFn: async (groupId: string) => {
-      if (!username) {
-        toast({ title: "Error", description: "Please set a username first" });
-        return;
+      let user = username;
+      if (!user) {
+        user = prompt("Please enter a username:");
+        if (!user) throw new Error("Username is required");
+        localStorage.setItem("username", user);
       }
-      return await apiRequest("POST", `/api/groups/${groupId}/join`, { username });
+      return await apiRequest("POST", `/api/groups/${groupId}/join`, { username: user });
     },
     onSuccess: (_, groupId) => {
       queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
+      if (username) {
+        queryClient.invalidateQueries({ queryKey: [`/api/users/${username}/groups`] });
+      }
       setLocation(`/groups/${groupId}`);
       toast({ title: "Success", description: "Joined group!" });
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error.message || "Failed to join group" });
+      toast({ title: "Error", description: error?.message || "Failed to join group" });
     },
   });
 
