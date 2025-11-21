@@ -22,7 +22,7 @@ const upload = multer({
   storage: multer.diskStorage({
     destination: async (req, file, cb) => {
       await ensureUploadDirs();
-      if (file.fieldname === "htmlFile") {
+      if (file.fieldname === "gameFile") {
         cb(null, gamesDir);
       } else if (file.fieldname === "thumbnail") {
         cb(null, thumbnailsDir);
