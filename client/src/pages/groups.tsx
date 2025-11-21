@@ -26,14 +26,16 @@ export default function Groups() {
 
   const createGroupMutation = useMutation({
     mutationFn: async () => {
-      if (!username) {
-        toast({ title: "Error", description: "Please set a username first" });
-        return;
+      let user = username;
+      if (!user) {
+        user = prompt("Please enter a username:");
+        if (!user) return;
+        localStorage.setItem("username", user);
       }
       return await apiRequest("POST", "/api/groups", {
         name: groupName,
         description: groupDescription,
-        username,
+        username: user,
       });
     },
     onSuccess: (data: any) => {
