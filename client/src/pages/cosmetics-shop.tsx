@@ -7,6 +7,63 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { Cosmetic, UserCosmetic } from "@shared/schema";
 
+// Import all cosmetic thumbnail images
+import neonCyberpunk from "@assets/generated_images/neon_cyberpunk_theme.png";
+import darkModePro from "@assets/generated_images/dark_mode_pro_theme.png";
+import forestGreen from "@assets/generated_images/forest_green_theme.png";
+import oceanWave from "@assets/generated_images/ocean_wave_theme.png";
+import sunsetGold from "@assets/generated_images/sunset_gold_theme.png";
+import cosmicPurple from "@assets/generated_images/cosmic_purple_theme.png";
+import proPlayer from "@assets/generated_images/pro_player_badge.png";
+import speedRunner from "@assets/generated_images/speed_runner_badge.png";
+import collector from "@assets/generated_images/collector_badge.png";
+import legend from "@assets/generated_images/legend_badge.png";
+import founder from "@assets/generated_images/founder_badge.png";
+import coinMaster from "@assets/generated_images/coin_master_badge.png";
+import goldenFrame from "@assets/generated_images/golden_frame.png";
+import pixelArt from "@assets/generated_images/pixel_art_frame.png";
+import neonGlow from "@assets/generated_images/neon_glow_frame.png";
+import diamond from "@assets/generated_images/diamond_frame.png";
+import fire from "@assets/generated_images/fire_frame.png";
+import crystal from "@assets/generated_images/crystal_frame.png";
+import sword from "@assets/generated_images/sword_cursor.png";
+import fireball from "@assets/generated_images/fireball_cursor.png";
+import lightning from "@assets/generated_images/lightning_cursor.png";
+import meteor from "@assets/generated_images/meteor_cursor.png";
+import ghost from "@assets/generated_images/ghost_cursor.png";
+import sparkle from "@assets/generated_images/sparkle_cursor.png";
+import dragon from "@assets/generated_images/dragon_cursor.png";
+import pixelHeart from "@assets/generated_images/pixel_heart_cursor.png";
+
+const cosmeticImages: Record<string, string> = {
+  'Neon Cyberpunk': neonCyberpunk,
+  'Dark Mode Pro': darkModePro,
+  'Forest Green': forestGreen,
+  'Ocean Wave': oceanWave,
+  'Sunset Gold': sunsetGold,
+  'Cosmic Purple': cosmicPurple,
+  'Pro Player': proPlayer,
+  'Speed Runner': speedRunner,
+  'Collector': collector,
+  'Legend': legend,
+  'Founder': founder,
+  'Coin Master': coinMaster,
+  'Golden Frame': goldenFrame,
+  'Pixel Art': pixelArt,
+  'Neon Glow': neonGlow,
+  'Diamond': diamond,
+  'Fire': fire,
+  'Crystal': crystal,
+  'Sword Cursor': sword,
+  'Fire Ball': fireball,
+  'Lightning Bolt': lightning,
+  'Meteor': meteor,
+  'Ghost': ghost,
+  'Sparkle': sparkle,
+  'Dragon': dragon,
+  'Pixel Heart': pixelHeart,
+};
+
 export default function CosmeticsShop() {
   const { toast } = useToast();
   const username = localStorage.getItem("username") || "";
@@ -111,7 +168,15 @@ export default function CosmeticsShop() {
             const canAfford = coins >= cosmetic.price;
 
             return (
-              <Card key={cosmetic.id} data-testid={`card-cosmetic-${cosmetic.id}`}>
+              <Card key={cosmetic.id} data-testid={`card-cosmetic-${cosmetic.id}`} className="overflow-hidden">
+                <div className="w-full h-48 bg-secondary overflow-hidden flex items-center justify-center">
+                  <img 
+                    src={cosmeticImages[cosmetic.name] || cosmetic.thumbnail || ""} 
+                    alt={cosmetic.name}
+                    className="w-full h-full object-cover"
+                    data-testid={`img-cosmetic-${cosmetic.id}`}
+                  />
+                </div>
                 <CardHeader>
                   <CardTitle className="text-lg">{cosmetic.name}</CardTitle>
                 </CardHeader>
