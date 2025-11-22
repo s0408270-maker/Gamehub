@@ -66,6 +66,9 @@ export default function AdminPanel() {
   const username = localStorage.getItem("username") || "";
   const [targetUser, setTargetUser] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
+  const [customThemeName, setCustomThemeName] = useState("");
+  const [customThemeCss, setCustomThemeCss] = useState("");
+  const [customThemeDesc, setCustomThemeDesc] = useState("");
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
@@ -95,6 +98,9 @@ export default function AdminPanel() {
     onSuccess: (theme) => {
       toast({ title: "Theme added!", description: `${theme.name} has been added to available themes.` });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
+      setCustomThemeName("");
+      setCustomThemeCss("");
+      setCustomThemeDesc("");
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to add theme", variant: "destructive" });
@@ -228,28 +234,77 @@ export default function AdminPanel() {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Theme Presets</CardTitle>
-            <CardDescription>Add a preset theme to your available themes</CardDescription>
+            <CardDescription>Add a preset theme or create your own</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {THEME_PRESETS.map((preset) => (
-              <div key={preset.name} className="p-3 border rounded-md">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{preset.name}</h3>
-                    <p className="text-sm text-muted-foreground">{preset.description}</p>
+          <CardContent className="space-y-4">
+            {/* Built-in Presets */}
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Built-in Presets</h4>
+              <div className="space-y-2">
+                {THEME_PRESETS.map((preset) => (
+                  <div key={preset.name} className="p-3 border rounded-md">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-sm">{preset.name}</h3>
+                        <p className="text-xs text-muted-foreground">{preset.description}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => createThemeMutation.mutate(preset)}
+                        disabled={createThemeMutation.isPending || themes.some(t => t.name === preset.name)}
+                        data-testid={`button-add-preset-${preset.name.replace(/\s+/g, '-').toLowerCase()}`}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        {themes.some(t => t.name === preset.name) ? "Added" : "Add"}
+                      </Button>
+                    </div>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => createThemeMutation.mutate(preset)}
-                    disabled={createThemeMutation.isPending || themes.some(t => t.name === preset.name)}
-                    data-testid={`button-add-preset-${preset.name.replace(/\s+/g, '-').toLowerCase()}`}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {themes.some(t => t.name === preset.name) ? "Added" : "Add"}
-                  </Button>
-                </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* Custom Theme Creator */}
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-medium mb-3">Create Custom Preset</h4>
+              <div className="space-y-3">
+                <Input
+                  placeholder="Theme name (e.g., Dark Forest)"
+                  value={customThemeName}
+                  onChange={(e) => setCustomThemeName(e.target.value)}
+                  data-testid="input-custom-theme-name"
+                />
+                <Input
+                  placeholder="Description (e.g., Dark greens with forest vibes)"
+                  value={customThemeDesc}
+                  onChange={(e) => setCustomThemeDesc(e.target.value)}
+                  data-testid="input-custom-theme-desc"
+                />
+                <Textarea
+                  placeholder="CSS variables (e.g., --primary: 120 100% 50%;)"
+                  value={customThemeCss}
+                  onChange={(e) => setCustomThemeCss(e.target.value)}
+                  className="font-mono text-sm"
+                  data-testid="textarea-custom-theme-css"
+                />
+                <Button
+                  onClick={() => {
+                    if (customThemeName && customThemeCss) {
+                      createThemeMutation.mutate({
+                        name: customThemeName,
+                        cssOverrides: customThemeCss,
+                        description: customThemeDesc,
+                      });
+                    }
+                  }}
+                  disabled={!customThemeName || !customThemeCss || createThemeMutation.isPending}
+                  className="w-full"
+                  data-testid="button-create-custom-theme"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Custom Preset
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
