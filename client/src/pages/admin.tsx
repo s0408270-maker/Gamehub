@@ -167,6 +167,20 @@ export default function AdminPanel() {
     },
   });
 
+  // Check if user is admin (owner not allowed here)
+  const isAuthorized = currentUser?.isAdmin === "true" || currentUser?.role === "admin";
+
+  if (!isAuthorized) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        <Card>
+          <CardContent className="pt-6 text-center text-muted-foreground">
+            You don't have permission to access the admin panel.
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pt-12">
