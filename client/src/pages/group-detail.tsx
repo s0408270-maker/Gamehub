@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
-import { ArrowLeft, Send, Upload, MessageSquare, Gamepad2, Gift } from "lucide-react";
+import { ArrowLeft, Send, Upload, MessageSquare, Gamepad2, Gift, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,10 +22,16 @@ export default function GroupDetail() {
   const [selectedRecipient, setSelectedRecipient] = useState<string>("");
   const [senderCosmetics, setSenderCosmetics] = useState<string[]>([]);
   const [receiverCosmetics, setReceiverCosmetics] = useState<string[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
   const username = localStorage.getItem("username") || "";
+  
+  const { data: currentUser } = useQuery({
+    queryKey: [`/api/users/${username}`],
+    enabled: !!username,
+  });
 
   // Queries
   const { data: group, isLoading: groupLoading } = useQuery<Group>({
@@ -154,6 +160,20 @@ export default function GroupDetail() {
     },
   });
 
+  const deleteGroupMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("DELETE", `/api/groups/${groupId}?username=${username}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Group deleted!", description: "Group has been removed" });
+      setDeleteDialogOpen(false);
+      setLocation("/groups");
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to delete group", variant: "destructive" });
+    },
+  });
+
   // Extract cosmetics from response
   const myCosmetics = ((myCosmeticsData as any)?.owned || []) as UserCosmetic[];
 
@@ -203,6 +223,40 @@ export default function GroupDetail() {
               </p>
             )}
           </div>
+          {(group.createdBy === (currentUser as any)?.id || (currentUser as any)?.role === "owner") && (
+            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  data-testid="button-delete-group"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent data-testid="dialog-delete-group">
+                <DialogHeader>
+                  <DialogTitle>Delete Group?</DialogTitle>
+                </DialogHeader>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Are you sure you want to delete "{group.name}"? This action cannot be undone.
+                </p>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} data-testid="button-cancel-delete">
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => deleteGroupMutation.mutate()}
+                    disabled={deleteGroupMutation.isPending}
+                    data-testid="button-confirm-delete"
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
 
