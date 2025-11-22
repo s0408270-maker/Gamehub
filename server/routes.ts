@@ -157,12 +157,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader("Access-Control-Allow-Headers", "Content-Type");
       res.setHeader("Cache-Control", "public, max-age=3600");
       
-      res.sendFile(htmlPath);
+      // Read HTML and inject base URL for relative asset paths
+      const htmlContent = await fs.readFile(htmlPath, "utf-8");
+      const gameDir = path.dirname(game.htmlPath);
+      const baseUrl = gameDir.startsWith("/") ? gameDir : "/" + gameDir;
+      
+      // Inject <base> tag into HTML head if not already present
+      let modifiedHtml = htmlContent;
+      if (!modifiedHtml.includes("<base ")) {
+        const baseTag = `<base href="${baseUrl}/" />`;
+        modifiedHtml = modifiedHtml.replace(/<\/head>/i, `${baseTag}\n</head>`);
+        if (!modifiedHtml.includes("<head>")) {
+          modifiedHtml = modifiedHtml.replace(/<html/i, `<html>\n<head>${baseTag}</head>\n<html`);
+        }
+      }
+      
+      res.send(modifiedHtml);
     } catch (error) {
       console.error("Error serving game:", error);
       res.status(500).send("Failed to load game");
     }
   });
+
+  // Serve game assets (audio, images, etc.) with proper CORS headers
+  app.use("/uploads/games", async (req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    next();
+  });
+  app.use("/uploads/games", (await import("express")).static(gamesDir));
 
   // GET /api/games - Get all games
   app.get("/api/games", async (req, res) => {
