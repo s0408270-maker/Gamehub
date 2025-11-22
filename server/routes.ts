@@ -6,6 +6,7 @@ import fs from "fs/promises";
 import { storage } from "./storage";
 import { cache } from "./cache";
 import { insertGameSchema, insertGroupSchema, insertGroupGameSchema, insertMessageSchema } from "@shared/schema";
+import { getUncachableStripeClient } from "./stripeClient";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 const gamesDir = path.join(uploadDir, "games");
@@ -1348,12 +1349,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // STRIPE CHECKOUT - Finish Battle Pass
   app.post("/api/stripe/checkout-finish-battlepass", async (req: any, res) => {
     try {
-      const username = req.body.username || "guest";
-      // In production, this would create a Stripe checkout session
-      // For now, return a placeholder response
+      const { username, priceId } = req.body;
+      
+      if (!priceId) {
+        return res.status(400).json({ message: "Price ID required" });
+      }
+
+      const stripe = await getUncachableStripeClient();
+
+      // Create checkout session
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        mode: "payment",
+        success_url: `${req.protocol}://${req.get("host")}/battle-pass?success=true`,
+        cancel_url: `${req.protocol}://${req.get("host")}/battle-pass`,
+      });
+
       return res.status(200).json({ 
-        message: "Stripe checkout initialized",
-        success: true
+        sessionUrl: session.url,
+        sessionId: session.id
       });
     } catch (error) {
       console.error("Stripe checkout error:", error);
