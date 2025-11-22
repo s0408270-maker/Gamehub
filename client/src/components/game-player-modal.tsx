@@ -21,6 +21,7 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
   const [gameUrl, setGameUrl] = useState<string>(`/api/play/${game.id}`);
   const [difficulty, setDifficulty] = useState<string>("");
   const [avgDifficulty, setAvgDifficulty] = useState<number>(0);
+  const [loadError, setLoadError] = useState<string>("");
   const gameType = (game as any).gameType || "html";
   const username = localStorage.getItem("username") || "";
   const { toast } = useToast();
@@ -173,6 +174,11 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
     setLoading(false);
   };
 
+  const handleIframeError = () => {
+    setLoading(false);
+    setLoadError("Failed to load game. This may be due to your network or browser restrictions. Try accessing the site directly without a proxy.");
+  };
+
   if (!open) return null;
 
   return (
@@ -239,7 +245,14 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
               <p className="text-base sm:text-lg">Loading game...</p>
             </div>
           )}
-          {gameType === "swf" ? (
+          {loadError && (
+            <div className="flex flex-col items-center gap-3 sm:gap-4 text-white px-4 text-center max-w-md">
+              <div className="text-red-400 text-lg font-semibold">Error Loading Game</div>
+              <p className="text-sm text-white/80">{loadError}</p>
+              <Button onClick={onClose} variant="outline" className="mt-2">Close</Button>
+            </div>
+          )}
+          {!loading && !loadError && gameType === "swf" ? (
             <embed
               src={`/api/play/${game.id}`}
               type="application/x-shockwave-flash"
@@ -247,18 +260,19 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
               title={game.title}
               data-testid="embed-game-swf"
             />
-          ) : (
+          ) : !loading && !loadError ? (
             <iframe
               src={gameUrl}
               className="w-full h-full border-0"
               title={game.title}
               referrerPolicy="no-referrer"
               allowFullScreen
-              allow="autoplay; microphone; camera; encrypted-media; accelerometer; gyroscope; payment; usb; vr"
+              allow="autoplay; microphone; camera; encrypted-media; accelerometer; gyroscope; payment; usb; vr; clipboard-read; clipboard-write"
               onLoad={handleIframeLoad}
+              onError={handleIframeError}
               data-testid="iframe-game"
             />
-          )}
+          ) : null}
         </div>
 
 
