@@ -102,7 +102,9 @@ Preferred communication style: Simple, everyday language.
 ## Quick Commands
 
 **Mobile Push Code (Git Push to GitHub):**
-```bash
-git push https://s0408270-maker:YOUR_GITHUB_TOKEN@github.com/s0408270-maker/Gamehub.git main
-```
-When user says "give me the mobile push code", run this git push command.
+⚠️ **SECURITY WARNING**: Never use `YOUR_GITHUB_TOKEN` placeholder with a real token in shell - tokens in shell history are visible!
+
+For GitHub pushes, use one of these secure methods instead:
+1. **SSH Keys (Recommended)**: Set up SSH key with GitHub (no token needed)
+2. **GitHub CLI**: Use `gh auth login` then `git push` normally
+3. **Personal Access Token (if needed)**: Store as environment variable, not in command
