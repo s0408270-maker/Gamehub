@@ -113,51 +113,6 @@ export default function AdminPanel() {
     },
   });
 
-  const christmasThemeCss = `
-    --primary: 0 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 200 100% 50%;
-    --secondary-foreground: 0 0% 100%;
-    --accent: 45 100% 50%;
-    --accent-foreground: 0 0% 0%;
-    --background: 200 20% 15%;
-    --foreground: 0 0% 95%;
-    --card: 200 15% 25%;
-    --border: 0 100% 50%;
-  `;
-
-  const applyChristmasThemeMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest("POST", "/api/admin/themes", {
-        username,
-        name: "Christmas Frozen",
-        cssOverrides: christmasThemeCss,
-        description: "Festive Christmas theme with icy frozen effects and twinkling lights",
-      });
-    },
-    onSuccess: (theme) => {
-      toast({ title: "Christmas theme created!", description: "Activating festive theme..." });
-      setTimeout(() => {
-        activateThemeMutation.mutate(theme.id);
-      }, 500);
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to create Christmas theme", variant: "destructive" });
-    },
-  });
-
-  const disableAllThemesMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest("POST", "/api/admin/themes/disable-all", { username });
-    },
-    onSuccess: () => {
-      toast({ title: "Themes disabled!", description: "Site returned to default colors." });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/themes/active"] });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to disable themes", variant: "destructive" });
-    },
-  });
 
   return (
     <div className="min-h-screen bg-background pt-12">
@@ -192,36 +147,6 @@ export default function AdminPanel() {
               <Send className="w-4 h-4 mr-2" />
               Send Announcement
             </Button>
-          </CardContent>
-        </Card>
-
-        {/* Quick Themes */}
-        <Card className="mb-8 bg-gradient-to-r from-red-500/10 to-blue-500/10 border-red-500/50">
-          <CardHeader>
-            <CardTitle>Quick Holiday Themes</CardTitle>
-            <CardDescription>Apply pre-made festive themes instantly</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button
-              onClick={() => applyChristmasThemeMutation.mutate()}
-              disabled={applyChristmasThemeMutation.isPending}
-              className="w-full bg-red-600 hover:bg-red-700 text-white"
-              data-testid="button-apply-christmas-theme"
-            >
-              {applyChristmasThemeMutation.isPending ? "Creating Christmas Theme..." : "✨ Apply Christmas Frozen Theme"}
-            </Button>
-            <Button
-              onClick={() => disableAllThemesMutation.mutate()}
-              disabled={disableAllThemesMutation.isPending}
-              variant="outline"
-              className="w-full"
-              data-testid="button-disable-all-themes"
-            >
-              {disableAllThemesMutation.isPending ? "Disabling..." : "✖️ Disable All Themes"}
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              Activate a festive Christmas theme with icy blues and warm holiday colors. Or disable all themes to return to defaults.
-            </p>
           </CardContent>
         </Card>
 
@@ -318,7 +243,17 @@ export default function AdminPanel() {
                       )}
                     </div>
                     <div className="flex gap-2">
-                      {theme.isActive !== "true" && (
+                      {theme.isActive === "true" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => activateThemeMutation.mutate("")}
+                          disabled={activateThemeMutation.isPending}
+                          data-testid={`button-disable-theme-${theme.id}`}
+                        >
+                          Disable
+                        </Button>
+                      ) : (
                         <Button
                           size="sm"
                           variant="outline"
