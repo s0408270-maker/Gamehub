@@ -10,57 +10,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { AppTheme, Announcement } from "@shared/schema";
 import { Trash2, Plus, Send } from "lucide-react";
 
-const THEME_PRESETS = [
-  {
-    name: "Christmas Frozen",
-    description: "Festive Christmas theme with icy frozen effects and twinkling lights",
-    cssOverrides: `
-    --primary: 0 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 200 100% 50%;
-    --secondary-foreground: 0 0% 100%;
-    --accent: 45 100% 50%;
-    --accent-foreground: 0 0% 0%;
-    --background: 200 20% 15%;
-    --foreground: 0 0% 95%;
-    --card: 200 15% 25%;
-    --border: 0 100% 50%;
-  `,
-  },
-  {
-    name: "Neon Night",
-    description: "Vibrant neon colors for a cyberpunk gaming experience",
-    cssOverrides: `
-    --primary: 280 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 180 100% 50%;
-    --secondary-foreground: 0 0% 0%;
-    --accent: 340 100% 50%;
-    --accent-foreground: 0 0% 100%;
-    --background: 250 30% 10%;
-    --foreground: 270 100% 95%;
-    --card: 250 30% 20%;
-    --border: 280 100% 50%;
-  `,
-  },
-  {
-    name: "Ocean Blue",
-    description: "Cool blue tones with aquatic vibes",
-    cssOverrides: `
-    --primary: 200 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 160 100% 50%;
-    --secondary-foreground: 0 0% 0%;
-    --accent: 30 100% 50%;
-    --accent-foreground: 0 0% 0%;
-    --background: 210 25% 15%;
-    --foreground: 200 30% 95%;
-    --card: 210 25% 25%;
-    --border: 200 100% 50%;
-  `,
-  },
-];
-
 export default function AdminPanel() {
   const { toast } = useToast();
   const username = localStorage.getItem("username") || "";
@@ -230,80 +179,92 @@ export default function AdminPanel() {
           </CardContent>
         </Card>
 
-        {/* Theme Presets */}
+        {/* Create Custom Theme */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Theme Presets</CardTitle>
-            <CardDescription>Add a preset theme or create your own</CardDescription>
+            <CardTitle>Create Custom Theme</CardTitle>
+            <CardDescription>Design your own theme with CSS color variables</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Built-in Presets */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Built-in Presets</h4>
-              <div className="space-y-2">
-                {THEME_PRESETS.map((preset) => (
-                  <div key={preset.name} className="p-3 border rounded-md">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-sm">{preset.name}</h3>
-                        <p className="text-xs text-muted-foreground">{preset.description}</p>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => createThemeMutation.mutate(preset)}
-                        disabled={createThemeMutation.isPending || themes.some(t => t.name === preset.name)}
-                        data-testid={`button-add-preset-${preset.name.replace(/\s+/g, '-').toLowerCase()}`}
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        {themes.some(t => t.name === preset.name) ? "Added" : "Add"}
-                      </Button>
-                    </div>
+            {/* CSS Guide */}
+            <div className="bg-muted/50 p-4 rounded-md space-y-3">
+              <div>
+                <h4 className="font-semibold text-sm mb-2">How CSS Variables Work</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Colors use the HSL format: <code className="bg-background px-2 py-1 rounded text-xs">Hue Saturation% Lightness%</code>
+                </p>
+                <div className="space-y-2 text-xs">
+                  <div className="font-mono bg-background p-2 rounded">
+                    <div><span className="text-cyan-400">--primary:</span> <span className="text-yellow-400">280</span> <span className="text-yellow-400">100%</span> <span className="text-yellow-400">50%</span>;</div>
                   </div>
-                ))}
+                  <p className="text-muted-foreground">Hue 0-360 (red, orange, yellow, green, cyan, blue, purple), Saturation 0-100%, Lightness 0-100%</p>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-sm mb-2">Variables You Can Set</h4>
+                <div className="text-xs space-y-1 text-muted-foreground">
+                  <p><code className="bg-background px-2 py-0.5 rounded">--primary</code> - Main brand color (buttons, links)</p>
+                  <p><code className="bg-background px-2 py-0.5 rounded">--primary-foreground</code> - Text on primary backgrounds</p>
+                  <p><code className="bg-background px-2 py-0.5 rounded">--secondary</code> - Secondary accent color</p>
+                  <p><code className="bg-background px-2 py-0.5 rounded">--secondary-foreground</code> - Text on secondary backgrounds</p>
+                  <p><code className="bg-background px-2 py-0.5 rounded">--accent</code> - Highlights and calls-to-action</p>
+                  <p><code className="bg-background px-2 py-0.5 rounded">--accent-foreground</code> - Text on accent backgrounds</p>
+                  <p><code className="bg-background px-2 py-0.5 rounded">--background</code> - Page background</p>
+                  <p><code className="bg-background px-2 py-0.5 rounded">--foreground</code> - Main text color</p>
+                  <p><code className="bg-background px-2 py-0.5 rounded">--card</code> - Card/panel backgrounds</p>
+                  <p><code className="bg-background px-2 py-0.5 rounded">--border</code> - Border colors</p>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-sm mb-2">Example Theme</h4>
+                <div className="bg-background p-2 rounded text-xs font-mono overflow-x-auto">
+                  <pre>{`--primary: 280 100% 50%;
+--primary-foreground: 0 0% 100%;
+--background: 240 25% 10%;
+--foreground: 0 0% 95%;
+--accent: 340 100% 50%;`}</pre>
+                </div>
               </div>
             </div>
 
-            {/* Custom Theme Creator */}
-            <div className="border-t pt-4">
-              <h4 className="text-sm font-medium mb-3">Create Custom Preset</h4>
-              <div className="space-y-3">
-                <Input
-                  placeholder="Theme name (e.g., Dark Forest)"
-                  value={customThemeName}
-                  onChange={(e) => setCustomThemeName(e.target.value)}
-                  data-testid="input-custom-theme-name"
-                />
-                <Input
-                  placeholder="Description (e.g., Dark greens with forest vibes)"
-                  value={customThemeDesc}
-                  onChange={(e) => setCustomThemeDesc(e.target.value)}
-                  data-testid="input-custom-theme-desc"
-                />
-                <Textarea
-                  placeholder="CSS variables (e.g., --primary: 120 100% 50%;)"
-                  value={customThemeCss}
-                  onChange={(e) => setCustomThemeCss(e.target.value)}
-                  className="font-mono text-sm"
-                  data-testid="textarea-custom-theme-css"
-                />
-                <Button
-                  onClick={() => {
-                    if (customThemeName && customThemeCss) {
-                      createThemeMutation.mutate({
-                        name: customThemeName,
-                        cssOverrides: customThemeCss,
-                        description: customThemeDesc,
-                      });
-                    }
-                  }}
-                  disabled={!customThemeName || !customThemeCss || createThemeMutation.isPending}
-                  className="w-full"
-                  data-testid="button-create-custom-theme"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Custom Preset
-                </Button>
-              </div>
+            {/* Form */}
+            <div className="space-y-3">
+              <Input
+                placeholder="Theme name (e.g., Dark Forest, Neon Cyberpunk)"
+                value={customThemeName}
+                onChange={(e) => setCustomThemeName(e.target.value)}
+                data-testid="input-custom-theme-name"
+              />
+              <Input
+                placeholder="Description (optional - e.g., Cool blues with neon accents)"
+                value={customThemeDesc}
+                onChange={(e) => setCustomThemeDesc(e.target.value)}
+                data-testid="input-custom-theme-desc"
+              />
+              <Textarea
+                placeholder="Paste your CSS variables here (one per line)"
+                value={customThemeCss}
+                onChange={(e) => setCustomThemeCss(e.target.value)}
+                className="font-mono text-sm min-h-40"
+                data-testid="textarea-custom-theme-css"
+              />
+              <Button
+                onClick={() => {
+                  if (customThemeName && customThemeCss) {
+                    createThemeMutation.mutate({
+                      name: customThemeName,
+                      cssOverrides: customThemeCss,
+                      description: customThemeDesc,
+                    });
+                  }
+                }}
+                disabled={!customThemeName || !customThemeCss || createThemeMutation.isPending}
+                className="w-full"
+                data-testid="button-create-custom-theme"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Theme
+              </Button>
             </div>
           </CardContent>
         </Card>
