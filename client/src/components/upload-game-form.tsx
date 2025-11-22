@@ -221,6 +221,20 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                 type="button"
                 variant="outline"
                 onClick={handleGameFileClick}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) {
+                    setGameFile(file);
+                    setGameFileName(file.name);
+                    setFileErrors(prev => ({ ...prev, game: undefined }));
+                  }
+                }}
                 className="w-full h-24 flex flex-col items-center justify-center gap-2 cursor-pointer"
                 data-testid="button-select-game-file"
               >
@@ -291,6 +305,25 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
             type="button"
             variant="outline"
             onClick={handleThumbnailClick}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const file = e.dataTransfer.files?.[0];
+              if (file) {
+                setThumbnailFile(file);
+                setThumbnailFileName(file.name);
+                setFileErrors(prev => ({ ...prev, thumbnail: undefined }));
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  setThumbnailPreview(reader.result as string);
+                };
+                reader.readAsDataURL(file);
+              }
+            }}
             className="w-full min-h-48 flex flex-col items-center justify-center gap-3 cursor-pointer"
             data-testid="button-select-thumbnail"
           >
