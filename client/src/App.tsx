@@ -192,6 +192,8 @@ function AppContent() {
   const [, setLocation] = useLocation();
   const { data: activeTheme } = useQuery<{ cssOverrides: string } | null>({
     queryKey: ["/api/admin/themes/active"],
+    enabled: !!username,
+    refetchInterval: 5000,
   });
 
   useEffect(() => {
@@ -202,10 +204,13 @@ function AppContent() {
 
   useEffect(() => {
     if (activeTheme?.cssOverrides) {
-      const style = document.createElement("style");
-      style.textContent = `:root { ${activeTheme.cssOverrides} }`;
-      document.head.appendChild(style);
-      return () => style.remove();
+      let styleElement = document.getElementById("theme-overrides");
+      if (!styleElement) {
+        styleElement = document.createElement("style");
+        styleElement.id = "theme-overrides";
+        document.head.appendChild(styleElement);
+      }
+      styleElement.textContent = `:root { ${activeTheme.cssOverrides} }`;
     }
   }, [activeTheme]);
 
