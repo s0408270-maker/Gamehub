@@ -286,3 +286,90 @@
     inset: -1px;
   }
 }
+
+/* Cosmetic Theme Styles */
+
+/* Cyberpunk Theme */
+body[data-cosmetic="cyberpunk"] {
+  --background: 270 100% 6% !important;
+  --foreground: 270 100% 95% !important;
+  --primary: 300 100% 50% !important;
+  --secondary: 180 100% 50% !important;
+  --accent: 300 100% 50% !important;
+  --card: 270 100% 8% !important;
+  background: linear-gradient(135deg, #0a0015 0%, #1a003d 50%, #0a0015 100%) !important;
+}
+
+body[data-cosmetic="cyberpunk"] button {
+  text-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+}
+
+/* Dark Pro Theme */
+body[data-cosmetic="dark_pro"] {
+  --background: 0 0% 10% !important;
+  --foreground: 0 0% 95% !important;
+  --primary: 0 0% 100% !important;
+  --secondary: 0 0% 60% !important;
+  --card: 0 0% 13% !important;
+  background: linear-gradient(to right, #1a1a1a, #2a2a2a) !important;
+}
+
+/* Forest Theme */
+body[data-cosmetic="forest"] {
+  --background: 120 40% 14% !important;
+  --foreground: 120 30% 92% !important;
+  --primary: 120 100% 50% !important;
+  --secondary: 120 60% 50% !important;
+  --accent: 120 80% 45% !important;
+  --card: 120 35% 18% !important;
+  background: linear-gradient(135deg, #1b4d2e 0%, #0d3b1a 100%) !important;
+}
+
+body[data-cosmetic="forest"] button {
+  text-shadow: 0 0 8px rgba(74, 222, 128, 0.3);
+}
+
+/* Ocean Theme */
+body[data-cosmetic="ocean"] {
+  --background: 200 80% 12% !important;
+  --foreground: 200 20% 95% !important;
+  --primary: 180 100% 50% !important;
+  --secondary: 200 100% 50% !important;
+  --accent: 180 100% 45% !important;
+  --card: 200 75% 15% !important;
+  background: linear-gradient(135deg, #0f3d66 0%, #001a33 100%) !important;
+}
+
+body[data-cosmetic="ocean"] button {
+  text-shadow: 0 0 8px rgba(6, 182, 212, 0.3);
+}
+
+/* Sunset Theme */
+body[data-cosmetic="sunset"] {
+  --background: 20 70% 16% !important;
+  --foreground: 20 40% 95% !important;
+  --primary: 40 100% 55% !important;
+  --secondary: 15 100% 50% !important;
+  --accent: 10 100% 55% !important;
+  --card: 20 65% 20% !important;
+  background: linear-gradient(135deg, #8b4513 0%, #d2691e 50%, #ff6347 100%) !important;
+}
+
+body[data-cosmetic="sunset"] button {
+  text-shadow: 0 0 8px rgba(249, 115, 22, 0.3);
+}
+
+/* Cosmic Theme */
+body[data-cosmetic="cosmic"] {
+  --background: 270 50% 12% !important;
+  --foreground: 270 20% 95% !important;
+  --primary: 270 100% 60% !important;
+  --secondary: 240 100% 60% !important;
+  --accent: 280 100% 55% !important;
+  --card: 270 45% 16% !important;
+  background: linear-gradient(135deg, #2d1b4e 0%, #1a0033 50%, #2d1b4e 100%) !important;
+}
+
+body[data-cosmetic="cosmic"] button {
+  text-shadow: 0 0 10px rgba(167, 139, 250, 0.4);
+}
