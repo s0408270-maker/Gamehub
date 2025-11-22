@@ -13,9 +13,7 @@ interface GamePlayerModalProps {
 }
 
 export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const gameType = (game as any).gameType || "html";
   const username = localStorage.getItem("username") || "";
 
@@ -56,52 +54,19 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
     return () => clearInterval(interval);
   }, [open, username]);
 
-  // Fetch game file and create blob URL for secure loading
+  // Load Ruffle for SWF files
   useEffect(() => {
-    if (!open) return;
+    if (!open || gameType !== "swf") return;
 
-    let objectUrl: string | null = null;
+    const script = document.createElement("script");
+    script.src = RUFFLE_SCRIPT;
+    script.async = true;
+    document.body.appendChild(script);
+  }, [open, gameType]);
 
-    const loadGame = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        // Load Ruffle for SWF files
-        if (gameType === "swf") {
-          const script = document.createElement("script");
-          script.src = RUFFLE_SCRIPT;
-          script.async = true;
-          document.body.appendChild(script);
-        }
-
-        const response = await fetch(`/api/play/${game.id}`);
-        
-        if (!response.ok) {
-          throw new Error("Failed to load game");
-        }
-
-        const blob = await response.blob();
-        objectUrl = URL.createObjectURL(blob);
-        setBlobUrl(objectUrl);
-      } catch (err) {
-        console.error("Error loading game:", err);
-        setError("Failed to load game. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadGame();
-
-    // Cleanup blob URL when modal closes
-    return () => {
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
-      setBlobUrl(null);
-    };
-  }, [open, game.id, gameType]);
+  const handleIframeLoad = () => {
+    setLoading(false);
+  };
 
   if (!open) return null;
 
@@ -132,39 +97,33 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
         </div>
 
         {/* Game Container */}
-        <div className="flex-1 bg-background rounded-md overflow-hidden shadow-2xl flex items-center justify-center">
-          {loading ? (
+        <div className="flex-1 bg-background rounded-md overflow-hidden shadow-2xl flex items-center justify-center relative">
+          {loading && (
             <div className="flex flex-col items-center gap-3 sm:gap-4 text-white px-4">
               <Loader2 className="w-8 sm:w-12 h-8 sm:h-12 animate-spin" />
               <p className="text-base sm:text-lg">Loading game...</p>
             </div>
-          ) : error ? (
-            <div className="text-center text-white px-4">
-              <AlertCircle className="w-8 sm:w-12 h-8 sm:h-12 text-destructive mx-auto mb-3" />
-              <p className="text-lg sm:text-xl font-semibold mb-2">Oops!</p>
-              <p className="text-sm sm:text-base">{error}</p>
-            </div>
-          ) : blobUrl ? (
-            gameType === "swf" ? (
-              <embed
-                src={blobUrl}
-                type="application/x-shockwave-flash"
-                className="w-full h-full"
-                title={game.title}
-                data-testid="embed-game-swf"
-              />
-            ) : (
-              <iframe
-                src={blobUrl}
-                className="w-full h-full border-0"
-                title={game.title}
-                sandbox="allow-scripts allow-forms allow-pointer-lock allow-same-origin allow-popups allow-presentation"
-                referrerPolicy="no-referrer"
-                allowFullScreen
-                data-testid="iframe-game"
-              />
-            )
-          ) : null}
+          )}
+          {gameType === "swf" ? (
+            <embed
+              src={`/api/play/${game.id}`}
+              type="application/x-shockwave-flash"
+              className="w-full h-full"
+              title={game.title}
+              data-testid="embed-game-swf"
+            />
+          ) : (
+            <iframe
+              src={`/api/play/${game.id}`}
+              className="w-full h-full border-0"
+              title={game.title}
+              sandbox="allow-scripts allow-forms allow-pointer-lock allow-same-origin allow-top-navigation allow-popups allow-presentation"
+              referrerPolicy="no-referrer"
+              allowFullScreen
+              onLoad={handleIframeLoad}
+              data-testid="iframe-game"
+            />
+          )}
         </div>
 
         <p className="text-center text-white/60 text-xs sm:text-sm mt-2 sm:mt-4 px-2" data-testid="text-close-instruction">
