@@ -7,8 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { AppTheme } from "@shared/schema";
-import { Trash2, Plus } from "lucide-react";
+import type { AppTheme, Announcement } from "@shared/schema";
+import { Trash2, Plus, Send } from "lucide-react";
 
 export default function AdminPanel() {
   const { toast } = useToast();
@@ -17,6 +17,7 @@ export default function AdminPanel() {
   const [newThemeCss, setNewThemeCss] = useState("");
   const [newThemeDesc, setNewThemeDesc] = useState("");
   const [targetUser, setTargetUser] = useState("");
+  const [announcementMessage, setAnnouncementMessage] = useState("");
 
   const { data: themes = [] } = useQuery<AppTheme[]>({
     queryKey: ["/api/admin/themes"],
@@ -24,6 +25,10 @@ export default function AdminPanel() {
 
   const { data: activeTheme } = useQuery<AppTheme | null>({
     queryKey: ["/api/admin/themes/active"],
+  });
+
+  const { data: activeAnnouncement } = useQuery<Announcement | null>({
+    queryKey: ["/api/announcements/active"],
   });
 
   const createThemeMutation = useMutation({
@@ -91,12 +96,58 @@ export default function AdminPanel() {
     },
   });
 
+  const createAnnouncementMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/admin/announcements", {
+        username,
+        message: announcementMessage,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Announcement sent!", description: "Message is now showing to all users." });
+      setAnnouncementMessage("");
+      queryClient.invalidateQueries({ queryKey: ["/api/announcements/active"] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to send announcement", variant: "destructive" });
+    },
+  });
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         <h1 className="text-3xl font-bold mb-8" data-testid="heading-admin-panel">
           Admin Panel
         </h1>
+
+        {/* Site-wide Announcement */}
+        <Card className="mb-8 border-primary/50 bg-primary/5">
+          <CardHeader>
+            <CardTitle>Site-wide Announcement</CardTitle>
+            <CardDescription>Send a message that appears on everyone's screen</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {activeAnnouncement && (
+              <div className="p-3 bg-background rounded border border-primary/30 mb-4">
+                <p className="text-sm"><span className="font-semibold">Current:</span> {activeAnnouncement.message}</p>
+              </div>
+            )}
+            <Textarea
+              placeholder="Enter announcement message (e.g., Server maintenance in 5 minutes)"
+              value={announcementMessage}
+              onChange={(e) => setAnnouncementMessage(e.target.value)}
+              data-testid="textarea-announcement"
+            />
+            <Button
+              onClick={() => createAnnouncementMutation.mutate()}
+              disabled={!announcementMessage || createAnnouncementMutation.isPending}
+              data-testid="button-send-announcement"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Send Announcement
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Grant Admin Access */}
         <Card className="mb-8">

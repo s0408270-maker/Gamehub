@@ -894,6 +894,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ANNOUNCEMENTS
+  app.get("/api/announcements/active", async (req, res) => {
+    try {
+      const announcement = await storage.getActiveAnnouncement();
+      res.json(announcement || null);
+    } catch (error) {
+      console.error("Error fetching announcement:", error);
+      res.status(500).json({ message: "Failed to fetch announcement" });
+    }
+  });
+
+  app.post("/api/admin/announcements", async (req, res) => {
+    try {
+      const username = req.body.username;
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.isAdmin !== "true") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { message } = req.body;
+      if (!message) {
+        return res.status(400).json({ message: "Message required" });
+      }
+
+      const announcement = await storage.createAnnouncement({
+        message,
+        createdBy: username,
+        isActive: "true",
+      });
+      cache.clear();
+      res.status(201).json(announcement);
+    } catch (error) {
+      console.error("Error creating announcement:", error);
+      res.status(400).json({ message: "Failed to create announcement" });
+    }
+  });
+
+  app.post("/api/announcements/:announcementId/dismiss", async (req, res) => {
+    try {
+      const announcement = await storage.dismissAnnouncement(req.params.announcementId);
+      cache.clear();
+      res.json(announcement);
+    } catch (error) {
+      console.error("Error dismissing announcement:", error);
+      res.status(400).json({ message: "Failed to dismiss announcement" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

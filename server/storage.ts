@@ -1,4 +1,4 @@
-import { type Game, type InsertGame, games, groups, groupMembers, groupGames, messages, users, type Group, type InsertGroup, type GroupGame, type InsertGroupGame, type Message, type InsertMessage, type User, type InsertUser, type GroupMember, cosmetics, userCosmetics, activeCosmeticsMap, type Cosmetic, type UserCosmetic, type ActiveCosmetic, gameDifficultyVotes, type GameDifficultyVote, type InsertGameDifficultyVote, cosmeticTrades, type CosmeticTrade, type InsertCosmeticTrade, battlePassTiers, userBattlePassProgress, type BattlePassTier, type InsertBattlePassTier, type UserBattlePassProgress, type InsertUserBattlePassProgress, appThemes, type AppTheme, type InsertAppTheme } from "@shared/schema";
+import { type Game, type InsertGame, games, groups, groupMembers, groupGames, messages, users, type Group, type InsertGroup, type GroupGame, type InsertGroupGame, type Message, type InsertMessage, type User, type InsertUser, type GroupMember, cosmetics, userCosmetics, activeCosmeticsMap, type Cosmetic, type UserCosmetic, type ActiveCosmetic, gameDifficultyVotes, type GameDifficultyVote, type InsertGameDifficultyVote, cosmeticTrades, type CosmeticTrade, type InsertCosmeticTrade, battlePassTiers, userBattlePassProgress, type BattlePassTier, type InsertBattlePassTier, type UserBattlePassProgress, type InsertUserBattlePassProgress, appThemes, type AppTheme, type InsertAppTheme, announcements, type Announcement, type InsertAnnouncement } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -68,6 +68,11 @@ export interface IStorage {
   createTheme(theme: InsertAppTheme): Promise<AppTheme>;
   setActiveTheme(themeId: string): Promise<void>;
   deleteTheme(themeId: string): Promise<void>;
+
+  // Announcements
+  createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement>;
+  getActiveAnnouncement(): Promise<Announcement | undefined>;
+  dismissAnnouncement(announcementId: string): Promise<Announcement>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -426,6 +431,28 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTheme(themeId: string): Promise<void> {
     await db.delete(appThemes).where(eq(appThemes.id, themeId));
+  }
+
+  // Announcements
+  async createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement> {
+    const result = await db.insert(announcements).values(announcement).returning();
+    return result[0];
+  }
+
+  async getActiveAnnouncement(): Promise<Announcement | undefined> {
+    const result = await db.select().from(announcements)
+      .where(eq(announcements.isActive, "true"))
+      .orderBy(desc(announcements.createdAt))
+      .limit(1);
+    return result[0];
+  }
+
+  async dismissAnnouncement(announcementId: string): Promise<Announcement> {
+    const result = await db.update(announcements)
+      .set({ isActive: "false" })
+      .where(eq(announcements.id, announcementId))
+      .returning();
+    return result[0];
   }
 }
 

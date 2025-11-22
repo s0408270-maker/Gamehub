@@ -139,6 +139,15 @@ export const appThemes = pgTable("app_themes", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Global announcements/broadcasts
+export const announcements = pgTable("announcements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  message: text("message").notNull(),
+  createdBy: varchar("created_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  isActive: text("is_active").default("true").notNull(), // 'true' or 'false'
+});
+
 // Schema definitions
 export const insertGameSchema = createInsertSchema(games).omit({ id: true });
 export const insertGroupSchema = createInsertSchema(groups).omit({ id: true, createdAt: true });
@@ -153,6 +162,7 @@ export const insertCosmeticTradeSchema = createInsertSchema(cosmeticTrades).omit
 export const insertBattlePassTierSchema = createInsertSchema(battlePassTiers).omit({ id: true });
 export const insertUserBattlePassProgressSchema = createInsertSchema(userBattlePassProgress).omit({ id: true });
 export const insertAppThemeSchema = createInsertSchema(appThemes).omit({ id: true, createdAt: true });
+export const insertAnnouncementSchema = createInsertSchema(announcements).omit({ id: true, createdAt: true });
 
 // Types
 export type Game = typeof games.$inferSelect;
@@ -182,3 +192,5 @@ export type UserBattlePassProgress = typeof userBattlePassProgress.$inferSelect;
 export type InsertUserBattlePassProgress = z.infer<typeof insertUserBattlePassProgressSchema>;
 export type AppTheme = typeof appThemes.$inferSelect;
 export type InsertAppTheme = z.infer<typeof insertAppThemeSchema>;
+export type Announcement = typeof announcements.$inferSelect;
+export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;

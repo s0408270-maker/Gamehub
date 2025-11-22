@@ -26,6 +26,7 @@ import BattlePass from "@/pages/battle-pass";
 import AdminPanel from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AnnouncementBanner } from "@/components/announcement-banner";
 import type { Group, User } from "@shared/schema";
 
 function Router() {
@@ -214,6 +215,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <AnnouncementBanner />
       <Header />
       <main className="flex-1 overflow-auto">
         <div className="w-full h-full">
