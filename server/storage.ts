@@ -405,6 +405,27 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  // Owner features
+  async banUser(username: string): Promise<User> {
+    const result = await db.update(users)
+      .set({ isBanned: "true" })
+      .where(eq(users.username, username))
+      .returning();
+    return result[0];
+  }
+
+  async unbanUser(username: string): Promise<User> {
+    const result = await db.update(users)
+      .set({ isBanned: "false" })
+      .where(eq(users.username, username))
+      .returning();
+    return result[0];
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
   async getAllThemes(): Promise<AppTheme[]> {
     return await db.select().from(appThemes);
   }

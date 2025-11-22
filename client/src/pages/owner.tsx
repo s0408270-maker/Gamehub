@@ -7,8 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { AppTheme, Announcement } from "@shared/schema";
-import { Trash2, Plus, Send, ShoppingCart, Upload } from "lucide-react";
+import type { AppTheme, Announcement, User } from "@shared/schema";
+import { Trash2, Plus, Send, ShoppingCart, Upload, Ban } from "lucide-react";
 import { generateThemeFromDescription } from "@/lib/theme-generator";
 import { UploadGameForm } from "@/components/upload-game-form";
 
@@ -44,6 +44,17 @@ export default function OwnerPanel() {
   const { data: currentUser } = useQuery({
     queryKey: [`/api/users/${username}`],
     enabled: !!username,
+  });
+
+  const { data: allUsers = [] } = useQuery<User[]>({
+    queryKey: ["/api/owner/users", username],
+    enabled: !!username,
+    queryFn: async () => {
+      if (!username) return [];
+      const res = await fetch(`/api/owner/users?username=${username}`);
+      if (!res.ok) throw new Error("Failed to fetch users");
+      return res.json();
+    },
   });
 
   const createThemeMutation = useMutation({
@@ -164,6 +175,32 @@ export default function OwnerPanel() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to send announcement", variant: "destructive" });
+    },
+  });
+
+  const banUserMutation = useMutation({
+    mutationFn: async (userToBan: string) => {
+      return await apiRequest("POST", `/api/owner/users/${userToBan}/ban`, { username });
+    },
+    onSuccess: () => {
+      toast({ title: "User banned!", description: "User can no longer login." });
+      queryClient.invalidateQueries({ queryKey: ["/api/owner/users"] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to ban user", variant: "destructive" });
+    },
+  });
+
+  const unbanUserMutation = useMutation({
+    mutationFn: async (userToUnban: string) => {
+      return await apiRequest("POST", `/api/owner/users/${userToUnban}/unban`, { username });
+    },
+    onSuccess: () => {
+      toast({ title: "User unbanned!", description: "User can login again." });
+      queryClient.invalidateQueries({ queryKey: ["/api/owner/users"] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to unban user", variant: "destructive" });
     },
   });
 
@@ -369,6 +406,57 @@ export default function OwnerPanel() {
               <ShoppingCart className="w-4 h-4 mr-2" />
               {createThemeCosmeticMutation.isPending ? "Creating..." : "Create Theme Cosmetic"}
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Ban Users */}
+        <Card className="mb-8 border-destructive/50 bg-destructive/5">
+          <CardHeader>
+            <CardTitle>Ban Users</CardTitle>
+            <CardDescription>Block users from accessing the website</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {allUsers.length === 0 ? (
+                <p className="text-muted-foreground">No users found</p>
+              ) : (
+                allUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    className="flex items-center justify-between p-3 border rounded-md"
+                    data-testid={`user-item-${user.id}`}
+                  >
+                    <div>
+                      <h3 className="font-semibold">{user.username}</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {user.isBanned === "true" ? "🚫 BANNED" : "Active"}
+                      </p>
+                    </div>
+                    {user.isBanned === "true" ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => unbanUserMutation.mutate(user.username)}
+                        disabled={unbanUserMutation.isPending}
+                        data-testid={`button-unban-${user.id}`}
+                      >
+                        Unban
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => banUserMutation.mutate(user.username)}
+                        disabled={banUserMutation.isPending}
+                        data-testid={`button-ban-${user.id}`}
+                      >
+                        <Ban className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </CardContent>
         </Card>
 

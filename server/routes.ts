@@ -110,6 +110,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
+      if (user.isBanned === "true") {
+        return res.status(403).json({ message: "You have been banned from this website" });
+      }
+
       res.json({ id: user.id, username: user.username });
     } catch (error) {
       console.error("Error logging in:", error);
@@ -957,6 +961,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error dismissing announcement:", error);
       res.status(400).json({ message: "Failed to dismiss announcement" });
+    }
+  });
+
+  // OWNER ROUTES
+  app.get("/api/owner/users", async (req, res) => {
+    try {
+      const username = req.query.username as string;
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.role !== "owner") {
+        return res.status(403).json({ message: "Owner access required" });
+      }
+
+      const allUsers = await storage.getAllUsers();
+      res.json(allUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.post("/api/owner/users/:username/ban", async (req, res) => {
+    try {
+      const ownerUsername = req.body.username;
+      const owner = await storage.getUserByUsername(ownerUsername);
+      if (!owner || owner.role !== "owner") {
+        return res.status(403).json({ message: "Owner access required" });
+      }
+
+      const user = await storage.banUser(req.params.username);
+      res.json(user);
+    } catch (error) {
+      console.error("Error banning user:", error);
+      res.status(400).json({ message: "Failed to ban user" });
+    }
+  });
+
+  app.post("/api/owner/users/:username/unban", async (req, res) => {
+    try {
+      const ownerUsername = req.body.username;
+      const owner = await storage.getUserByUsername(ownerUsername);
+      if (!owner || owner.role !== "owner") {
+        return res.status(403).json({ message: "Owner access required" });
+      }
+
+      const user = await storage.unbanUser(req.params.username);
+      res.json(user);
+    } catch (error) {
+      console.error("Error unbanning user:", error);
+      res.status(400).json({ message: "Failed to unban user" });
     }
   });
 

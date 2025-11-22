@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   coins: integer("coins").default(0).notNull(),
   isAdmin: text("is_admin").default("false").notNull(), // 'true' or 'false' (legacy)
   role: text("role").default("user").notNull(), // 'user', 'admin', 'owner'
+  isBanned: text("is_banned").default("false").notNull(), // 'true' or 'false'
 });
 
 // Public games
