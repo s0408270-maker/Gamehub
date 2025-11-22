@@ -13,6 +13,7 @@ interface GameDifficultyVoteProps {
 export function GameDifficultyVote({ gameId }: GameDifficultyVoteProps) {
   const { toast } = useToast();
   const [selectedDifficulty, setSelectedDifficulty] = useState<number | null>(null);
+  const [hasVoted, setHasVoted] = useState(false);
   const username = localStorage.getItem("username") || "";
 
   const { data: difficultyData } = useQuery<{
@@ -31,8 +32,8 @@ export function GameDifficultyVote({ gameId }: GameDifficultyVoteProps) {
       });
     },
     onSuccess: () => {
+      setHasVoted(true);
       toast({ title: "Vote recorded!", description: "Thanks for rating this game." });
-      setSelectedDifficulty(null);
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to submit vote", variant: "destructive" });
@@ -40,6 +41,10 @@ export function GameDifficultyVote({ gameId }: GameDifficultyVoteProps) {
   });
 
   const avgDifficulty = difficultyData?.average || 0;
+
+  if (hasVoted) {
+    return null;
+  }
 
   return (
     <Card className="bg-muted/50">
