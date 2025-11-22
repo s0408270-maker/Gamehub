@@ -136,10 +136,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const htmlPath = path.join(process.cwd(), game.htmlPath.replace("/uploads/", "uploads/"));
       
       // CSP sandbox header forces unique origin isolation for uploaded HTML
-      // This prevents XSS even when the endpoint is accessed directly
+      // This prevents XSS while allowing external content loading
       res.setHeader(
         "Content-Security-Policy", 
-        "sandbox allow-scripts allow-forms allow-pointer-lock; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data: blob:; child-src 'none';"
+        "sandbox allow-scripts allow-forms allow-pointer-lock allow-same-origin allow-top-navigation allow-popups; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src * data: blob:; child-src *; font-src * data:; media-src *; connect-src *;"
       );
       
       // Additional security headers

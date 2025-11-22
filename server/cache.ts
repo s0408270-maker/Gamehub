@@ -33,11 +33,13 @@ class Cache {
   }
 
   invalidatePattern(pattern: string): void {
-    for (const key of this.store.keys()) {
+    const keysToDelete: string[] = [];
+    this.store.forEach((_, key) => {
       if (key.includes(pattern)) {
-        this.store.delete(key);
+        keysToDelete.push(key);
       }
-    }
+    });
+    keysToDelete.forEach(key => this.store.delete(key));
   }
 
   clear(): void {
