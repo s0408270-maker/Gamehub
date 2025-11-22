@@ -313,11 +313,14 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                 setThumbnailFile(file);
                 setThumbnailFileName(file.name);
                 setFileErrors(prev => ({ ...prev, thumbnail: undefined }));
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  setThumbnailPreview(reader.result as string);
-                };
-                reader.readAsDataURL(file);
+                // Generate preview async without blocking
+                setTimeout(() => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    setThumbnailPreview(reader.result as string);
+                  };
+                  reader.readAsDataURL(file);
+                }, 0);
               }
             }}
             className="w-full min-h-48 flex flex-col items-center justify-center gap-3 cursor-pointer border-2 border-dashed border-border rounded-md p-4 hover:bg-secondary/50 transition-colors"
