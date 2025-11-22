@@ -3,9 +3,12 @@ import { createServer, type Server } from "http";
 import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
+import OpenAI from "openai";
 import { storage } from "./storage";
 import { cache } from "./cache";
 import { insertGameSchema, insertGroupSchema, insertGroupGameSchema, insertMessageSchema } from "@shared/schema";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const uploadDir = path.join(process.cwd(), "uploads");
 const gamesDir = path.join(uploadDir, "games");
@@ -827,9 +830,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Admin access required" });
       }
 
-      const { name, cssOverrides, description } = req.body;
-      if (!name || !cssOverrides) {
-        return res.status(400).json({ message: "Name and cssOverrides required" });
+      let { name, cssOverrides, description } = req.body;
+      if (!name) {
+        return res.status(400).json({ message: "Name required" });
+      }
+
+      // If cssOverrides is empty, generate from description using AI
+      if (!cssOverrides && description) {
+        try {
+          const response = await openai.chat.completions.create({
+            model: "gpt-5",
+            messages: [
+              {
+                role: "system",
+                content: `You are a CSS color theme designer. Generate HSL color variables based on the description. Return ONLY the CSS variables in this exact format, one per line:
+--primary: H S% L%;
+--primary-foreground: H S% L%;
+--secondary: H S% L%;
+--secondary-foreground: H S% L%;
+--accent: H S% L%;
+--accent-foreground: H S% L%;
+--background: H S% L%;
+--foreground: H S% L%;
+--card: H S% L%;
+--border: H S% L%;
+
+Where H is 0-360, S is 0-100%, L is 0-100%. No other text.`,
+              },
+              {
+                role: "user",
+                content: description,
+              },
+            ],
+            max_completion_tokens: 1024,
+          });
+
+          cssOverrides = response.choices[0].message.content || "";
+        } catch (error) {
+          console.error("Error generating theme with AI:", error);
+          return res.status(400).json({ message: "Failed to generate theme with AI" });
+        }
+      }
+
+      if (!cssOverrides) {
+        return res.status(400).json({ message: "CSS overrides or description required" });
       }
 
       const theme = await storage.createTheme({
