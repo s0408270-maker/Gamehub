@@ -79,6 +79,16 @@ export interface IStorage {
   createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement>;
   getActiveAnnouncement(): Promise<Announcement | undefined>;
   dismissAnnouncement(announcementId: string): Promise<Announcement>;
+
+  // User blocking
+  blockUser(userId: string, blockedUserId: string): Promise<any>;
+  unblockUser(userId: string, blockedUserId: string): Promise<void>;
+  isUserBlocked(userId: string, blockedUserId: string): Promise<boolean>;
+  getBlockedUsers(userId: string): Promise<any[]>;
+
+  // Group notifications
+  toggleGroupNotifications(userId: string, groupId: string, enabled: boolean): Promise<any>;
+  getGroupNotificationSetting(userId: string, groupId: string): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
