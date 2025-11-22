@@ -12,23 +12,32 @@ export default function CosmeticsInventory() {
   const { toast } = useToast();
   const username = localStorage.getItem("username") || "";
 
-  const { data: userCosmetics = [], isLoading } = useQuery<(UserCosmetic & { cosmetic: Cosmetic })[]>({
+  const { data: userCosmeticsData } = useQuery({
     queryKey: [`/api/users/${username}/cosmetics`],
     enabled: !!username,
   });
 
-  const { data: activeCosmetic } = useQuery<{ cosmeticId: string | null } | null>({
-    queryKey: [`/api/users/${username}/active-cosmetic`],
-    enabled: !!username,
+  const { data: allCosmetics = [] } = useQuery<Cosmetic[]>({
+    queryKey: ["/api/cosmetics"],
   });
+
+  const isLoading = !userCosmeticsData;
+  const ownedCosmetics = userCosmeticsData?.owned || [];
+  const activeId = userCosmeticsData?.active?.activeCosmeticId;
+
+  // Map owned cosmetics with their full details
+  const userCosmetics = ownedCosmetics.map((uc: UserCosmetic) => {
+    const cosmetic = allCosmetics.find(c => c.id === uc.cosmeticId);
+    return { ...uc, cosmetic };
+  }).filter((uc: any) => uc.cosmetic);
 
   const equipMutation = useMutation({
     mutationFn: async (cosmeticId: string | null) => {
-      return await apiRequest("POST", `/api/users/${username}/active-cosmetic`, { cosmeticId });
+      return await apiRequest("POST", "/api/cosmetics/activate", { username, cosmeticId });
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Cosmetic equipped!" });
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${username}/active-cosmetic`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${username}/cosmetics`] });
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to equip cosmetic", variant: "destructive" });
@@ -84,7 +93,7 @@ export default function CosmeticsInventory() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {userCosmetics.map((uc) => (
+            {userCosmetics.map((uc: any) => (
               <Card key={uc.id} className="overflow-hidden hover-elevate" data-testid={`card-cosmetic-${uc.cosmeticId}`}>
                 <CardContent className="p-0">
                   <CosmeticPreview cosmetic={uc.cosmetic} />
@@ -95,7 +104,7 @@ export default function CosmeticsInventory() {
                     <p className="text-sm text-muted-foreground">{uc.cosmetic.description}</p>
                   )}
                   <div className="pt-2 space-y-2">
-                    {activeCosmetic?.cosmeticId === uc.cosmeticId ? (
+                    {activeId === uc.cosmeticId ? (
                       <Button
                         variant="secondary"
                         className="w-full"
@@ -119,7 +128,7 @@ export default function CosmeticsInventory() {
                       variant="ghost"
                       className="w-full"
                       onClick={() => equipMutation.mutate(null)}
-                      disabled={!activeCosmetic?.cosmeticId || activeCosmetic.cosmeticId !== uc.cosmeticId}
+                      disabled={!activeId || activeId !== uc.cosmeticId}
                       data-testid={`button-unequip-${uc.cosmeticId}`}
                     >
                       Unequip

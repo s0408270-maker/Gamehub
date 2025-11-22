@@ -1,0 +1,106 @@
+plugin:runtime-error-plugin] userCosmetics.map is not a function. (In 'userCosmetics.map(
+      (uc) => /* @__PURE__ */ jsxDEV(Card, { "data-replit-metadata": "client/src/pages/cosmetics-inventory.tsx:88:14", "data-component-name": "Card", className: "overflow-hidden hover-elevate", "data-testid": `card-cosmetic-${uc.cosmeticId}`, children: [
+        /* @__PURE__ */ jsxDEV(CardContent, { "data-replit-metadata": "client/src/pages/cosmetics-inventory.tsx:89:16", "data-component-name": "CardContent", className: "p-0", children: /* @__PURE__ */ jsxDEV(CosmeticPreview, { "data-replit-metadata": "client/src/pages/cosmetics-inventory.tsx:90:18", "data-component-name": "CosmeticPreview", cosmetic: uc.cosmetic }, void 0, false, {
+          fileName: "/home/runner/workspace/client/src/pages/cosmetics-inventory.tsx",
+          lineNumber: 109,
+          columnNumber: 19
+        }, this) }, void 0, false, {
+          fileName: "/home/runner/workspace/client/src/pages/cosmetics-inventory.tsx",
+          lineNumber: 108,
+          columnNumber: 17
+        }, this),
+        /* @__PURE__ */ jsxDEV(CardHeader, { "data-replit-metadata": "client/src/pages/cosmetics-inventory.tsx:92:16", "data-component-name": "CardHeader", className: "space-y-2", children: [
+          /* @__PURE__ */ jsxDEV(CardTitle, { "data-replit-metadata": "client/src/pages/cosmetics-inventory.tsx:93:18", "data-component-name": "CardTitle", className: "text-lg", children: uc.cosmetic.name }, void 0, false, {
+            fileName: "/home/runner/workspace/client/src/pages/cosmetics-inventory.tsx",
+            lineNumber: 112,
+            columnNumber: 19
+          }, this),
+          uc.cosmetic.description && /* @__PURE__ */ jsxDEV("p", { "data-replit-metadata": "client/src/pages/cosmetics-inventory.tsx:95:20", "data-component-name": "p", className: "text-sm text-muted-foreground", children: uc.cosmetic.description }, void 0, false, {
+            fileName: "/home/runner/workspace/client/src/pages/cosmetics-inventory.tsx",
+            lineNumber: 114,
+            columnNumber: 15
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { "data-replit-metadata": "client/src/pages/cosmetics-inventory.tsx:97:18", "data-component-name": "div", className: "pt-2 space-y-2", children: [
+            activeCosmetic?.cosmeticId === uc.cosmeticId ? /* @__PURE__ */ jsxDEV(
+              Button,
+              {
+                "data-replit-metadata": "client/src/pages/cosmetics-inventory.tsx:99:22",
+                "data-component-name": "Button",
+                variant: "secondary",
+                className: "w-full",
+                disabled: true,
+                "data-testid": `button-equipped-${uc.cosmeticId}`,
+                children: [
+                  /* @__PURE__ */ jsxDEV(Star, { "data-replit-metadata": "client/src/pages/cosmetics-inventory.tsx:105:24", "data-component-name": "Star", className: "w-4 h-4 mr-2" }, void 0, false, {
+                    fileName: "/home/runner/workspace/client/src/pages/cosmetics-inventory.tsx",
+                    lineNumber: 124,
+                    columnNumber: 25
+                  }, this),
+                  "Equipped"
+                ]
+              },
+              void 0,
+              true,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/cosmetics-inventory.tsx",
+                lineNumber: 118,
+                columnNumber: 17
+              },
+              this
+            ) : /* @__PURE__ */ jsxDEV(
+              Button,
+              {
+                "data-replit-metadata": "client/src/pages/cosmetics-inventory.tsx:109:22",
+                "data-component-name": "Button",
+                className: "w-full",
+                onClick: () => equipMutation.mutate(uc.cosmeticId),
+                disabled: equipMutation.isPending,
+                "data-testid": `button-equip-${uc.cosmeticId}`,
+                children: "Equip"
+              },
+              void 0,
+              false,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/cosmetics-inventory.tsx",
+                lineNumber: 128,
+                columnNumber: 17
+              },
+              this
+            ),
+            /* @__PURE__ */ jsxDEV(
+              Button,
+              {
+                "data-replit-metadata": "client/src/pages/cosmetics-inventory.tsx:118:20",
+                "data-component-name": "Button",
+                variant: "ghost",
+                className: "w-full",
+                onClick: () => equipMutation.mutate(null),
+                disabled: !activeCosmetic?.cosmeticId || activeCosmetic.cosmeticId !== uc.cosmeticId,
+                "data-testid": `button-unequip-${uc.cosmeticId}`,
+                children: "Unequip"
+              },
+              void 0,
+              false,
+              {
+                fileName: "/home/runner/workspace/client/src/pages/cosmetics-inventory.tsx",
+                lineNumber: 137,
+                columnNumber: 21
+              },
+              this
+            )
+          ] }, void 0, true, {
+            fileName: "/home/runner/workspace/client/src/pages/cosmetics-inventory.tsx",
+            lineNumber: 116,
+            columnNumber: 19
+          }, this)
+        ] }, void 0, true, {
+          fileName: "/home/runner/workspace/client/src/pages/cosmetics-inventory.tsx",
+          lineNumber: 111,
+          columnNumber: 17
+        }, this)
+      ] }, uc.id, true, {
+        fileName: "/home/runner/workspace/client/src/pages/cosmetics-inventory.tsx",
+        lineNumber: 107,
+        columnNumber: 11
+      }, this)
+    )', 'userCosmetics.map' is undefined)
