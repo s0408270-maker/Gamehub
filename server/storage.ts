@@ -105,41 +105,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllGamesWithCreator(): Promise<(Game & { creatorUsername: string })[]> {
-    const results = await db.select({
-      id: games.id,
-      title: games.title,
-      htmlPath: games.htmlPath,
-      thumbnail: games.thumbnail,
-      createdBy: games.createdBy,
-      createdAt: games.createdAt,
-      tier: games.tier,
-      description: games.description,
-      creatorUsername: users.username,
-    }).from(games).leftJoin(users, eq(games.createdBy, users.id));
+    const allGames = await db.select().from(games);
+    const usersMap = new Map();
     
-    return results.map(r => ({
-      ...r,
-      creatorUsername: r.creatorUsername || "Unknown",
+    for (const game of allGames) {
+      if (game.createdBy && !usersMap.has(game.createdBy)) {
+        const userResult = await db.select().from(users).where(eq(users.id, game.createdBy)).limit(1);
+        usersMap.set(game.createdBy, userResult[0]?.username || "Unknown");
+      }
+    }
+    
+    return allGames.map(game => ({
+      ...game,
+      creatorUsername: usersMap.get(game.createdBy) || "Unknown",
     }));
   }
 
   async getGameWithCreator(id: string): Promise<(Game & { creatorUsername: string }) | undefined> {
-    const result = await db.select({
-      id: games.id,
-      title: games.title,
-      htmlPath: games.htmlPath,
-      thumbnail: games.thumbnail,
-      createdBy: games.createdBy,
-      createdAt: games.createdAt,
-      tier: games.tier,
-      description: games.description,
-      creatorUsername: users.username,
-    }).from(games).leftJoin(users, eq(games.createdBy, users.id)).where(eq(games.id, id)).limit(1);
+    const game = await db.select().from(games).where(eq(games.id, id)).limit(1);
+    if (!game[0]) return undefined;
     
-    if (!result[0]) return undefined;
+    let creatorUsername = "Unknown";
+    if (game[0].createdBy) {
+      const userResult = await db.select().from(users).where(eq(users.id, game[0].createdBy)).limit(1);
+      creatorUsername = userResult[0]?.username || "Unknown";
+    }
+    
     return {
-      ...result[0],
-      creatorUsername: result[0].creatorUsername || "Unknown",
+      ...game[0],
+      creatorUsername,
     };
   }
 
