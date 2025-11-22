@@ -217,9 +217,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                   }
                 }}
               />
-              <Button
-                type="button"
-                variant="outline"
+              <div
                 onClick={handleGameFileClick}
                 onDragOver={(e) => {
                   e.preventDefault();
@@ -235,7 +233,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                     setFileErrors(prev => ({ ...prev, game: undefined }));
                   }
                 }}
-                className="w-full h-24 flex flex-col items-center justify-center gap-2 cursor-pointer"
+                className="w-full h-24 flex flex-col items-center justify-center gap-2 cursor-pointer border-2 border-dashed border-border rounded-md hover:bg-secondary/50 transition-colors p-4"
                 data-testid="button-select-game-file"
               >
                 {gameFileName ? (
@@ -259,7 +257,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                     </div>
                   </>
                 )}
-              </Button>
+              </div>
               {fileErrors.game && <p className="text-xs sm:text-sm text-destructive">{fileErrors.game}</p>}
             </TabsContent>
 
@@ -301,9 +299,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
               }
             }}
           />
-          <Button
-            type="button"
-            variant="outline"
+          <div
             onClick={handleThumbnailClick}
             onDragOver={(e) => {
               e.preventDefault();
@@ -324,7 +320,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                 reader.readAsDataURL(file);
               }
             }}
-            className="w-full min-h-48 flex flex-col items-center justify-center gap-3 cursor-pointer"
+            className="w-full min-h-48 flex flex-col items-center justify-center gap-3 cursor-pointer border-2 border-dashed border-border rounded-md p-4 hover:bg-secondary/50 transition-colors"
             data-testid="button-select-thumbnail"
           >
             {thumbnailPreview ? (
@@ -355,7 +351,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                 </div>
               </>
             )}
-          </Button>
+          </div>
           {fileErrors.thumbnail && <p className="text-xs sm:text-sm text-destructive mt-2">{fileErrors.thumbnail}</p>}
         </div>
 
