@@ -592,13 +592,13 @@ export default function OwnerPanel() {
                       <div className="space-y-4">
                         <div>
                           <label className="text-sm font-semibold block mb-2">Free Cosmetic</label>
-                          <Select defaultValue={tier.freeCosmeticId || ""}>
+                          <Select defaultValue={tier.freeCosmeticId || "none"}>
                             <SelectTrigger>
                               <SelectValue placeholder="None" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
-                              {bpCosmetics.map(c => (
+                              <SelectItem value="none">None</SelectItem>
+                              {bpCosmetics.filter(c => c.id && c.id.trim()).map(c => (
                                 <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                               ))}
                             </SelectContent>
@@ -606,13 +606,13 @@ export default function OwnerPanel() {
                         </div>
                         <div>
                           <label className="text-sm font-semibold block mb-2">Premium Cosmetic</label>
-                          <Select defaultValue={tier.premiumCosmeticId || ""}>
+                          <Select defaultValue={tier.premiumCosmeticId || "none"}>
                             <SelectTrigger>
                               <SelectValue placeholder="None" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
-                              {bpCosmetics.map(c => (
+                              <SelectItem value="none">None</SelectItem>
+                              {bpCosmetics.filter(c => c.id && c.id.trim()).map(c => (
                                 <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                               ))}
                             </SelectContent>
@@ -620,13 +620,13 @@ export default function OwnerPanel() {
                         </div>
                         <div>
                           <label className="text-sm font-semibold block mb-2">Free Game</label>
-                          <Select defaultValue={tier.freeGameId || ""}>
+                          <Select defaultValue={tier.freeGameId || "none"}>
                             <SelectTrigger>
                               <SelectValue placeholder="None" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
-                              {allGames.map(g => (
+                              <SelectItem value="none">None</SelectItem>
+                              {allGames.filter(g => g.id && g.id.trim()).map(g => (
                                 <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>
                               ))}
                             </SelectContent>
@@ -634,24 +634,27 @@ export default function OwnerPanel() {
                         </div>
                         <div>
                           <label className="text-sm font-semibold block mb-2">Premium Game</label>
-                          <Select defaultValue={tier.premiumGameId || ""}>
+                          <Select defaultValue={tier.premiumGameId || "none"}>
                             <SelectTrigger>
                               <SelectValue placeholder="None" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
-                              {allGames.map(g => (
+                              <SelectItem value="none">None</SelectItem>
+                              {allGames.filter(g => g.id && g.id.trim()).map(g => (
                                 <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
                         <Button onClick={() => {
-                          const freeC = tier.freeCosmeticId || undefined;
-                          const premC = tier.premiumCosmeticId || undefined;
-                          const freeG = tier.freeGameId || undefined;
-                          const premG = tier.premiumGameId || undefined;
-                          updateTierMutation.mutate({ tierId: tier.id, freeCosmeticId: freeC, premiumCosmeticId: premC, freeGameId: freeG, premiumGameId: premG });
+                          const getVal = (sel: string | null | undefined) => sel && sel !== "none" ? sel : undefined;
+                          updateTierMutation.mutate({ 
+                            tierId: tier.id, 
+                            freeCosmeticId: getVal(tier.freeCosmeticId), 
+                            premiumCosmeticId: getVal(tier.premiumCosmeticId), 
+                            freeGameId: getVal(tier.freeGameId), 
+                            premiumGameId: getVal(tier.premiumGameId) 
+                          });
                         }} disabled={updateTierMutation.isPending} className="w-full" data-testid={`button-save-tier-${tier.tier}`}>Save Changes</Button>
                       </div>
                     </DialogContent>
