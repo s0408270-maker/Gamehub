@@ -276,7 +276,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllCosmetics(): Promise<Cosmetic[]> {
-    return await db.select().from(cosmetics);
+    return await db.select().from(cosmetics)
+      .where(eq(cosmetics.inShop, "true"));
   }
 
   async purchaseCosmetic(userId: string, cosmeticId: string): Promise<UserCosmetic> {
