@@ -75,6 +75,7 @@ export const cosmetics = pgTable("cosmetics", {
   price: integer("price").notNull(), // coin price
   thumbnail: text("thumbnail"),
   value: text("value").notNull(), // the actual CSS or value to apply
+  inShop: text("in_shop").default("true").notNull(), // 'true' or 'false' - whether it's available in shop
 });
 
 // User owned cosmetics
@@ -129,8 +130,10 @@ export const battlePassTiers = pgTable("battle_pass_tiers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   season: integer("season").notNull(), // Season number
   tier: integer("tier").notNull(), // 1-50 tiers
-  freeCosmeticId: varchar("free_cosmetic_id"), // Free reward
-  premiumCosmeticId: varchar("premium_cosmetic_id"), // Premium reward
+  freeCosmeticId: varchar("free_cosmetic_id"), // Free reward cosmetic
+  premiumCosmeticId: varchar("premium_cosmetic_id"), // Premium reward cosmetic
+  freeGameId: varchar("free_game_id"), // Free reward game
+  premiumGameId: varchar("premium_game_id"), // Premium reward game
 });
 
 // User battle pass progress

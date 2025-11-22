@@ -1,4 +1,4 @@
-import { type Game, type InsertGame, games, groups, groupMembers, groupGames, messages, users, type Group, type InsertGroup, type GroupGame, type InsertGroupGame, type Message, type InsertMessage, type User, type InsertUser, type GroupMember, cosmetics, userCosmetics, activeCosmeticsMap, type Cosmetic, type UserCosmetic, type ActiveCosmetic, gameDifficultyVotes, type GameDifficultyVote, type InsertGameDifficultyVote, cosmeticTrades, type CosmeticTrade, type InsertCosmeticTrade, battlePassTiers, userBattlePassProgress, type BattlePassTier, type InsertBattlePassTier, type UserBattlePassProgress, type InsertUserBattlePassProgress, appThemes, type AppTheme, type InsertAppTheme, announcements, type Announcement, type InsertAnnouncement } from "@shared/schema";
+import { type Game, type InsertGame, games, groups, groupMembers, groupGames, messages, users, type Group, type InsertGroup, type GroupGame, type InsertGroupGame, type Message, type InsertMessage, type User, type InsertUser, type GroupMember, cosmetics, userCosmetics, activeCosmeticsMap, type Cosmetic, type UserCosmetic, type ActiveCosmetic, gameDifficultyVotes, type GameDifficultyVote, type InsertGameDifficultyVote, cosmeticTrades, type CosmeticTrade, type InsertCosmeticTrade, battlePassTiers, userBattlePassProgress, type BattlePassTier, type InsertBattlePassTier, type UserBattlePassProgress, type InsertUserBattlePassProgress, appThemes, type AppTheme, type InsertAppTheme, announcements, type Announcement, type InsertAnnouncement, userOwnedGames, type UserOwnedGame } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -418,6 +418,19 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userBattlePassProgress.userId, userId))
       .returning();
     return result[0];
+  }
+
+  async updateBattlePassTier(tierId: string, freeCosmeticId: string | null, premiumCosmeticId: string | null, freeGameId: string | null, premiumGameId: string | null): Promise<BattlePassTier> {
+    const result = await db.update(battlePassTiers)
+      .set({ freeCosmeticId, premiumCosmeticId, freeGameId, premiumGameId })
+      .where(eq(battlePassTiers.id, tierId))
+      .returning();
+    return result[0];
+  }
+
+  async getBattlePassOnlyCosmetics(): Promise<Cosmetic[]> {
+    return await db.select().from(cosmetics)
+      .where(eq(cosmetics.inShop, "false"));
   }
 
   // Admin features
