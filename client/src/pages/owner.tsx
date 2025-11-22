@@ -813,6 +813,68 @@ export default function OwnerPanel() {
             </div>
           </CardContent>
         </Card>
+
+        {/* User Statistics & Overview */}
+        <Card>
+          <CardHeader>
+            <CardTitle>User Statistics & Overview</CardTitle>
+            <CardDescription>Server-wide user statistics and analytics</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="p-4 bg-card border rounded-lg">
+                <p className="text-muted-foreground text-sm">Total Users</p>
+                <p className="text-3xl font-bold">{allUsers.length}</p>
+              </div>
+              <div className="p-4 bg-card border rounded-lg">
+                <p className="text-muted-foreground text-sm">Admin Users</p>
+                <p className="text-3xl font-bold">{allUsers.filter(u => u.role === "admin" || u.isAdmin === "true").length}</p>
+              </div>
+              <div className="p-4 bg-card border rounded-lg">
+                <p className="text-muted-foreground text-sm">Banned Users</p>
+                <p className="text-3xl font-bold">{allUsers.filter(u => u.isBanned === "true").length}</p>
+              </div>
+              <div className="p-4 bg-card border rounded-lg">
+                <p className="text-muted-foreground text-sm">Total Games</p>
+                <p className="text-3xl font-bold">{allGames.length}</p>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-3">Users List</h3>
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-muted/50 grid grid-cols-4 gap-4 p-3 font-semibold text-sm border-b">
+                  <div>Username</div>
+                  <div>Role</div>
+                  <div>Coins</div>
+                  <div>Status</div>
+                </div>
+                {allUsers.map((user) => (
+                  <div key={user.id} className="grid grid-cols-4 gap-4 p-3 border-b hover:bg-muted/30" data-testid={`user-row-${user.username}`}>
+                    <div className="font-medium">{user.username}</div>
+                    <div className="text-sm">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        user.role === "owner" ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" :
+                        user.role === "admin" || user.isAdmin === "true" ? "bg-blue-500/20 text-blue-700 dark:text-blue-300" :
+                        "bg-gray-500/20 text-gray-700 dark:text-gray-300"
+                      }`}>
+                        {user.role || "user"}
+                      </span>
+                    </div>
+                    <div className="text-sm">{user.coins || 0}</div>
+                    <div className="text-sm">
+                      {user.isBanned === "true" ? (
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-red-500/20 text-red-700 dark:text-red-300">Banned</span>
+                      ) : (
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-green-500/20 text-green-700 dark:text-green-300">Active</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
