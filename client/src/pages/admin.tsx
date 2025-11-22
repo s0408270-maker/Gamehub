@@ -8,63 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { AppTheme, Announcement } from "@shared/schema";
-import { Trash2, Plus, Send } from "lucide-react";
-
-function generateThemeFromDescription(description: string): string {
-  const desc = description.toLowerCase();
-  
-  // Detect theme characteristics
-  const isDark = desc.includes("dark") || desc.includes("black") || desc.includes("night");
-  const isLight = desc.includes("light") || desc.includes("white") || desc.includes("bright");
-  const hasNeon = desc.includes("neon") || desc.includes("vibrant") || desc.includes("bright") || desc.includes("electric");
-  
-  // Detect primary color from keywords
-  let primaryHue = 200; // default blue
-  if (desc.includes("red") || desc.includes("crimson") || desc.includes("ruby")) primaryHue = 0;
-  else if (desc.includes("orange") || desc.includes("amber")) primaryHue = 30;
-  else if (desc.includes("yellow") || desc.includes("gold")) primaryHue = 50;
-  else if (desc.includes("green") || desc.includes("forest") || desc.includes("lime")) primaryHue = 120;
-  else if (desc.includes("cyan") || desc.includes("turquoise") || desc.includes("aqua")) primaryHue = 180;
-  else if (desc.includes("blue") || desc.includes("ocean") || desc.includes("navy")) primaryHue = 200;
-  else if (desc.includes("purple") || desc.includes("violet") || desc.includes("indigo")) primaryHue = 270;
-  else if (desc.includes("pink") || desc.includes("magenta")) primaryHue = 320;
-  
-  // Detect secondary color (complementary or different)
-  let secondaryHue = (primaryHue + 120) % 360;
-  if (desc.includes("and") && desc.match(/and\s+(\w+)/)) {
-    const colorMatch = desc.match(/and\s+(red|orange|yellow|green|cyan|blue|purple|pink)/);
-    if (colorMatch) {
-      const colors: Record<string, number> = {
-        red: 0, orange: 30, yellow: 50, green: 120, cyan: 180, blue: 200, purple: 270, pink: 320,
-      };
-      secondaryHue = colors[colorMatch[1]] || secondaryHue;
-    }
-  }
-  
-  // Detect accent color
-  let accentHue = (primaryHue + 60) % 360;
-  
-  // Saturation
-  const saturation = hasNeon ? 100 : 80;
-  
-  // Lightness for background and text
-  const bgLightness = isDark ? 15 : isLight ? 95 : 20;
-  const cardLightness = isDark ? 25 : isLight ? 90 : 30;
-  const fgLightness = isDark ? 95 : isLight ? 10 : 90;
-  const accentSaturation = hasNeon ? 100 : 90;
-  const accentLightness = isDark ? 55 : 45;
-  
-  return `--primary: ${primaryHue} ${saturation}% 50%;
---primary-foreground: ${isDark ? 0 : 200} ${isDark ? 0 : 30}% ${isDark ? 100 : 15}%;
---secondary: ${secondaryHue} ${saturation}% 50%;
---secondary-foreground: ${isDark ? 0 : 200} ${isDark ? 0 : 30}% ${isDark ? 100 : 15}%;
---accent: ${accentHue} ${accentSaturation}% ${accentLightness}%;
---accent-foreground: ${isDark ? 0 : 200} ${isDark ? 0 : 30}% ${isDark ? 100 : 15}%;
---background: ${primaryHue} 30% ${bgLightness}%;
---foreground: ${primaryHue} 30% ${fgLightness}%;
---card: ${primaryHue} 30% ${cardLightness}%;
---border: ${primaryHue} ${saturation}% 50%;`;
-}
+import { Trash2, Plus, Send, ShoppingCart } from "lucide-react";
+import { generateThemeFromDescription } from "@/lib/theme-generator";
 
 export default function AdminPanel() {
   const { toast } = useToast();
@@ -73,6 +18,9 @@ export default function AdminPanel() {
   const [announcementMessage, setAnnouncementMessage] = useState("");
   const [customThemeName, setCustomThemeName] = useState("");
   const [customThemeCss, setCustomThemeCss] = useState("");
+  const [cosmeticThemeName, setCosmeticThemeName] = useState("");
+  const [cosmeticThemeDesc, setCosmeticThemeDesc] = useState("");
+  const [cosmeticThemePrice, setCosmeticThemePrice] = useState(100);
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
@@ -150,6 +98,30 @@ export default function AdminPanel() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to delete theme", variant: "destructive" });
+    },
+  });
+
+  const createThemeCosmeticMutation = useMutation({
+    mutationFn: async () => {
+      const cssValue = generateThemeFromDescription(cosmeticThemeDesc);
+      return await apiRequest("POST", "/api/cosmetics", {
+        username,
+        name: cosmeticThemeName,
+        description: cosmeticThemeDesc,
+        type: "theme",
+        price: cosmeticThemePrice,
+        value: cssValue,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Theme cosmetic created!", description: "Theme is now available in the shop." });
+      queryClient.invalidateQueries({ queryKey: ["/api/cosmetics"] });
+      setCosmeticThemeName("");
+      setCosmeticThemeDesc("");
+      setCosmeticThemePrice(100);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create theme cosmetic", variant: "destructive" });
     },
   });
 
@@ -249,11 +221,11 @@ export default function AdminPanel() {
           </CardContent>
         </Card>
 
-        {/* Generate Theme from Description */}
+        {/* Generate Site Theme from Description */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Generate Theme from Description</CardTitle>
-            <CardDescription>Describe your theme and it will auto-generate the colors</CardDescription>
+            <CardTitle>Generate Site Theme</CardTitle>
+            <CardDescription>Create a site-wide theme from a description</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <Input
@@ -286,6 +258,50 @@ export default function AdminPanel() {
             >
               <Plus className="w-4 h-4 mr-2" />
               {createThemeMutation.isPending ? "Generating..." : "Generate Theme"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Create Cosmetic Theme for Shop */}
+        <Card className="mb-8 border-primary/50 bg-primary/5">
+          <CardHeader>
+            <CardTitle>Create Cosmetic Theme for Shop</CardTitle>
+            <CardDescription>Create a sellable theme cosmetic using the theme generator</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Input
+              placeholder="Theme cosmetic name (e.g., Sunset Paradise)"
+              value={cosmeticThemeName}
+              onChange={(e) => setCosmeticThemeName(e.target.value)}
+              data-testid="input-cosmetic-theme-name"
+            />
+            <Textarea
+              placeholder="Describe the theme colors (e.g., warm orange sunset with golden accents, dark neon purple)"
+              value={cosmeticThemeDesc}
+              onChange={(e) => setCosmeticThemeDesc(e.target.value)}
+              className="min-h-20"
+              data-testid="textarea-cosmetic-theme-desc"
+            />
+            <Input
+              type="number"
+              placeholder="Price in coins"
+              value={cosmeticThemePrice}
+              onChange={(e) => setCosmeticThemePrice(parseInt(e.target.value) || 0)}
+              min={1}
+              data-testid="input-cosmetic-theme-price"
+            />
+            <Button
+              onClick={() => {
+                if (cosmeticThemeName && cosmeticThemeDesc && cosmeticThemePrice > 0) {
+                  createThemeCosmeticMutation.mutate();
+                }
+              }}
+              disabled={!cosmeticThemeName || !cosmeticThemeDesc || cosmeticThemePrice <= 0 || createThemeCosmeticMutation.isPending}
+              className="w-full"
+              data-testid="button-create-theme-cosmetic"
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              {createThemeCosmeticMutation.isPending ? "Creating..." : "Create Theme Cosmetic"}
             </Button>
           </CardContent>
         </Card>
