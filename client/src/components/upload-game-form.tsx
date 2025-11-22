@@ -51,12 +51,13 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
 
       if (uploadMode === "code") {
         if (!htmlCode) throw new Error("HTML code is required");
-        if (!thumbnailFile) throw new Error("Thumbnail is required");
 
         const formData = new FormData();
         formData.append("title", data.title);
         formData.append("htmlCode", htmlCode);
-        formData.append("thumbnail", thumbnailFile);
+        if (thumbnailFile) {
+          formData.append("thumbnail", thumbnailFile);
+        }
         formData.append("username", username);
 
         const response = await fetch("/api/games/paste-code", {
@@ -72,12 +73,13 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
         return response.json();
       } else {
         if (!gameFile) throw new Error("Game file is required");
-        if (!thumbnailFile) throw new Error("Thumbnail is required");
 
         const formData = new FormData();
         formData.append("title", data.title);
         formData.append("gameFile", gameFile);
-        formData.append("thumbnail", thumbnailFile);
+        if (thumbnailFile) {
+          formData.append("thumbnail", thumbnailFile);
+        }
         formData.append("username", username);
 
         const response = await fetch("/api/games", {
@@ -135,9 +137,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
       }
     }
     
-    if (!thumbnailFile) {
-      errors.thumbnail = "Thumbnail is required";
-    } else if (!thumbnailFile.type.startsWith("image/")) {
+    if (thumbnailFile && !thumbnailFile.type.startsWith("image/")) {
       errors.thumbnail = "File must be an image";
     }
     
@@ -278,7 +278,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
         </div>
 
         <div>
-          <Label className="text-sm sm:text-base font-semibold block mb-2">Thumbnail Image</Label>
+          <Label className="text-sm sm:text-base font-semibold block mb-2">Thumbnail Image <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
           <input
             ref={thumbnailFileInputRef}
             type="file"
@@ -346,10 +346,10 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                 <ImageIcon className="w-8 h-8" />
                 <div className="text-center">
                   <p className="font-medium text-sm">
-                    Click to select thumbnail
+                    Click to select thumbnail (optional)
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Image file
+                    Image file or skip for default
                   </p>
                 </div>
               </>

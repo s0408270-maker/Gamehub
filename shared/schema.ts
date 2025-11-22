@@ -15,7 +15,7 @@ export const users = pgTable("users", {
 export const games = pgTable("games", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
-  thumbnail: text("thumbnail").notNull(),
+  thumbnail: text("thumbnail"),
   htmlPath: text("html_path").notNull(),
   gameType: text("game_type").default("html").notNull(), // 'html' or 'swf'
   createdBy: varchar("created_by").notNull(),
@@ -46,7 +46,7 @@ export const groupGames = pgTable("group_games", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   groupId: varchar("group_id").notNull(),
   title: text("title").notNull(),
-  thumbnail: text("thumbnail").notNull(),
+  thumbnail: text("thumbnail"),
   htmlPath: text("html_path").notNull(),
   uploadedBy: varchar("uploaded_by").notNull(),
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),

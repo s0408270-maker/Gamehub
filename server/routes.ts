@@ -189,14 +189,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
         
-        if (!files.gameFile || !files.thumbnail) {
+        if (!files.gameFile) {
           return res.status(400).json({ 
-            message: "Both game file and thumbnail are required" 
+            message: "Game file is required" 
           });
         }
 
         const gameFile = files.gameFile[0];
-        const thumbnailFile = files.thumbnail[0];
+        const thumbnailFile = files.thumbnail?.[0];
         const { title, username } = req.body;
 
         if (!title || !username) {
@@ -210,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Create paths relative to the uploads directory
         const htmlPath = `/uploads/games/${gameFile.filename}`;
-        const thumbnailPath = `/uploads/thumbnails/${thumbnailFile.filename}`;
+        const thumbnailPath = thumbnailFile ? `/uploads/thumbnails/${thumbnailFile.filename}` : null;
 
         const gameData = insertGameSchema.parse({
           title,
@@ -271,10 +271,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Title, username, and HTML code are required" });
         }
 
-        if (!thumbnailFile) {
-          return res.status(400).json({ message: "Thumbnail is required" });
-        }
-
         const user = await storage.getOrCreateUser(username);
 
         // Save HTML code to file
@@ -287,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Create paths relative to the uploads directory
         const htmlPath = `/uploads/games/${htmlFilename}`;
-        const thumbnailPath = `/uploads/thumbnails/${thumbnailFile.filename}`;
+        const thumbnailPath = thumbnailFile ? `/uploads/thumbnails/${thumbnailFile.filename}` : null;
 
         const gameData = insertGameSchema.parse({
           title,

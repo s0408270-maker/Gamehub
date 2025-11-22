@@ -146,14 +146,21 @@ export default function Home() {
                 data-testid={`card-game-${game.id}`}
               >
                 <div 
-                  className="relative aspect-video overflow-hidden bg-muted cursor-pointer"
+                  className="relative aspect-video overflow-hidden bg-muted cursor-pointer flex items-center justify-center"
                   onClick={() => setSelectedGame(game)}
                 >
-                  <img 
-                    src={game.thumbnail} 
-                    alt={game.title}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                  />
+                  {game.thumbnail ? (
+                    <img 
+                      src={game.thumbnail} 
+                      alt={game.title}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <Gamepad2 className="w-8 h-8" />
+                      <span className="text-xs font-medium">No Thumbnail</span>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform scale-75 group-hover:scale-100">
                       <div className="bg-primary/90 backdrop-blur-sm rounded-full p-4">
