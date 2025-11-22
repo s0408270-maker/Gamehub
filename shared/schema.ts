@@ -90,6 +90,9 @@ export const activeCosmeticsMap = pgTable("active_cosmetics", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().unique(),
   activeCosmeticId: varchar("active_cosmetic_id"),
+  frameId: varchar("frame_id"),
+  badgeId: varchar("badge_id"),
+  cursorId: varchar("cursor_id"),
 });
 
 // Game difficulty votes - community votes on game difficulty

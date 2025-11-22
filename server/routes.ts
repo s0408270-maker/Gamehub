@@ -631,6 +631,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // POST /api/cosmetics/update-profile - Update profile cosmetics (frame, badge, cursor)
+  app.post("/api/cosmetics/update-profile", async (req, res) => {
+    try {
+      const { username, type, cosmeticId } = req.body;
+      if (!username || !type) {
+        return res.status(400).json({ message: "Username and type required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const active = await storage.updateProfileCosmetic(user.id, type, cosmeticId || null);
+      cache.invalidate(`user:${username}:cosmetics`);
+      res.json(active);
+    } catch (error) {
+      console.error("Error updating profile cosmetic:", error);
+      res.status(400).json({ message: "Failed to update profile cosmetic" });
+    }
+  });
+
   // GET /api/users - Get all users for browsing
   app.get("/api/users", async (req, res) => {
     try {

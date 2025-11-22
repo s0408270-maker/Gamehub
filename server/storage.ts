@@ -43,6 +43,7 @@ export interface IStorage {
   getUserCosmetics(userId: string): Promise<UserCosmetic[]>;
   setActiveCosmetic(userId: string, cosmeticId: string | null): Promise<ActiveCosmetic>;
   getActiveCosmetic(userId: string): Promise<ActiveCosmetic | undefined>;
+  updateProfileCosmetic(userId: string, type: string, cosmeticId: string | null): Promise<ActiveCosmetic>;
 
   // Game difficulty voting
   voteGameDifficulty(gameId: string, userId: string, difficulty: number): Promise<GameDifficultyVote>;
@@ -300,6 +301,29 @@ export class DatabaseStorage implements IStorage {
       .where(eq(activeCosmeticsMap.userId, userId))
       .limit(1);
     return result[0];
+  }
+
+  async updateProfileCosmetic(userId: string, type: string, cosmeticId: string | null): Promise<ActiveCosmetic> {
+    const existing = await db.select().from(activeCosmeticsMap)
+      .where(eq(activeCosmeticsMap.userId, userId));
+    
+    const updateData = type === "frame" ? { frameId: cosmeticId }
+      : type === "badge" ? { badgeId: cosmeticId }
+      : type === "cursor" ? { cursorId: cosmeticId }
+      : { activeCosmeticId: cosmeticId };
+
+    if (existing.length > 0) {
+      const result = await db.update(activeCosmeticsMap)
+        .set(updateData)
+        .where(eq(activeCosmeticsMap.userId, userId))
+        .returning();
+      return result[0];
+    } else {
+      const result = await db.insert(activeCosmeticsMap)
+        .values({ userId, ...updateData })
+        .returning();
+      return result[0];
+    }
   }
 
   // Game difficulty voting
