@@ -631,6 +631,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/users - Get all users for browsing
+  app.get("/api/users", async (req, res) => {
+    try {
+      const cached = cache.get("all-users");
+      if (cached) {
+        return res.json(cached);
+      }
+      const allUsers = await storage.getAllUsers();
+      cache.set("all-users", allUsers, 300); // Cache for 5 minutes
+      res.json(allUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
   // POST /api/coins/add - Add coins to user (called when playing games)
   app.post("/api/coins/add", async (req, res) => {
     try {
