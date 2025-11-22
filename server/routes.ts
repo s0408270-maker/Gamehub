@@ -4,6 +4,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 import { storage } from "./storage";
+import { cache } from "./cache";
 import { insertGameSchema, insertGroupSchema, insertGroupGameSchema, insertMessageSchema } from "@shared/schema";
 
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -159,7 +160,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/games - Get all games
   app.get("/api/games", async (req, res) => {
     try {
+      const cached = cache.get("games:all");
+      if (cached) {
+        return res.json(cached);
+      }
       const games = await storage.getAllGames();
+      cache.set("games:all", games);
       res.json(games);
     } catch (error) {
       console.error("Error fetching games:", error);
@@ -224,7 +230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         const game = await storage.createGame(gameData);
-        
+        cache.invalidatePattern("games:");
         res.status(201).json(game);
       } catch (error) {
         console.error("Error uploading game:", error);
@@ -253,6 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       await storage.deleteGame(req.params.id);
+      cache.invalidatePattern("games:");
       res.json({ message: "Game deleted" });
     } catch (error) {
       console.error("Error deleting game:", error);
@@ -300,7 +307,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         const game = await storage.createGame(gameData);
-        
+        cache.invalidatePattern("games:");
         res.status(201).json(game);
       } catch (error) {
         console.error("Error creating game from code:", error);
@@ -318,7 +325,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/groups - Get all groups
   app.get("/api/groups", async (req, res) => {
     try {
+      const cached = cache.get("groups:all");
+      if (cached) {
+        return res.json(cached);
+      }
       const groups = await storage.getAllGroups();
+      cache.set("groups:all", groups);
       res.json(groups);
     } catch (error) {
       console.error("Error fetching groups:", error);
@@ -329,9 +341,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/users/:username/groups - Get groups for a user
   app.get("/api/users/:username/groups", async (req, res) => {
     try {
+      const cacheKey = `user:${req.params.username}:groups`;
+      const cached = cache.get(cacheKey);
+      if (cached) {
+        return res.json(cached);
+      }
       const user = await storage.getUserByUsername(req.params.username);
       if (!user) return res.json([]);
       const groups = await storage.getUserGroups(user.id);
+      cache.set(cacheKey, groups);
       res.json(groups);
     } catch (error) {
       console.error("Error fetching user groups:", error);
@@ -356,6 +374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const group = await storage.createGroup(groupData);
+      cache.invalidate("groups:all");
       res.status(201).json(group);
     } catch (error) {
       console.error("Error creating group:", error);
@@ -510,7 +529,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/leaderboard - Get top 10 users by coins
   app.get("/api/leaderboard", async (req, res) => {
     try {
+      const cached = cache.get("leaderboard:top10");
+      if (cached) {
+        return res.json(cached);
+      }
       const leaderboard = await storage.getLeaderboard(10);
+      cache.set("leaderboard:top10", leaderboard);
       res.json(leaderboard);
     } catch (error) {
       console.error("Error fetching leaderboard:", error);
@@ -521,7 +545,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/cosmetics - Get all cosmetics
   app.get("/api/cosmetics", async (req, res) => {
     try {
+      const cached = cache.get("cosmetics:all");
+      if (cached) {
+        return res.json(cached);
+      }
       const allCosmetics = await storage.getAllCosmetics();
+      cache.set("cosmetics:all", allCosmetics);
       res.json(allCosmetics);
     } catch (error) {
       console.error("Error fetching cosmetics:", error);
@@ -573,6 +602,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Purchase cosmetic
       const purchased = await storage.purchaseCosmetic(user.id, cosmeticId);
+      cache.invalidate(`user:${username}:cosmetics`);
+      cache.invalidate("leaderboard:top10");
       res.status(201).json(purchased);
     } catch (error) {
       console.error("Error purchasing cosmetic:", error);
@@ -615,6 +646,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updated = await storage.addCoins(user.id, amount);
+      cache.invalidate(`user:${username}`);
+      cache.invalidate("leaderboard:top10");
       res.json(updated);
     } catch (error) {
       console.error("Error adding coins:", error);
@@ -625,10 +658,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/users/:username - Get user with coins
   app.get("/api/users/:username", async (req, res) => {
     try {
+      const cacheKey = `user:${req.params.username}`;
+      const cached = cache.get(cacheKey);
+      if (cached) {
+        return res.json(cached);
+      }
       const user = await storage.getUserByUsername(req.params.username);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
+      cache.set(cacheKey, user);
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
