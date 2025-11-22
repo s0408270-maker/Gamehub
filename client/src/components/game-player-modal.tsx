@@ -72,31 +72,57 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
       return;
     }
 
-    const detectExternalIframe = async () => {
+    const detectExternalContent = async () => {
       try {
         const response = await fetch(`/api/play/${game.id}`);
         const html = await response.text();
         
-        // Parse HTML to find iframe src
+        // Parse HTML to find external content
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, "text/html");
-        const iframe = doc.querySelector("iframe");
         
-        if (iframe && iframe.src) {
-          const src = iframe.src;
-          // Check if it's an external URL
-          if (src.startsWith("http://") || src.startsWith("https://")) {
+        // Check for iframes first (primary case - Truffled wrapper)
+        const iframes = doc.querySelectorAll("iframe");
+        for (const iframe of iframes) {
+          const src = iframe.getAttribute("src");
+          if (src && (src.startsWith("http://") || src.startsWith("https://"))) {
+            // Found external iframe (like Truffled games)
             setGameUrl(src);
+            setLoading(false);
+            return;
           }
         }
+        
+        // Check for embed tags (SWF files)
+        const embeds = doc.querySelectorAll("embed");
+        for (const embed of embeds) {
+          const src = embed.getAttribute("src");
+          if (src && (src.startsWith("http://") || src.startsWith("https://"))) {
+            setGameUrl(src);
+            setLoading(false);
+            return;
+          }
+        }
+        
+        // Check for script tags that might load external content
+        const scripts = doc.querySelectorAll("script");
+        for (const script of scripts) {
+          const src = script.getAttribute("src");
+          if (src && (src.startsWith("http://") || src.startsWith("https://"))) {
+            // If script loads external content, still load wrapper
+            break;
+          }
+        }
+        
+        // No external content found, load as normal
+        setLoading(false);
       } catch (err) {
-        console.error("Error parsing game HTML:", err);
-      } finally {
+        console.error("Error detecting game content:", err);
         setLoading(false);
       }
     };
 
-    detectExternalIframe();
+    detectExternalContent();
   }, [open, game.id, gameType]);
 
   const handleIframeLoad = () => {
