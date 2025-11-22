@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,10 @@ export default function AdminPanel() {
   const [newThemeDesc, setNewThemeDesc] = useState("");
   const [targetUser, setTargetUser] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
+
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
+  }, []);
 
   const { data: themes = [] } = useQuery<AppTheme[]>({
     queryKey: ["/api/admin/themes"],
