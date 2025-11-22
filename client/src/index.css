@@ -373,3 +373,63 @@ body[data-cosmetic="cosmic"] {
 body[data-cosmetic="cosmic"] button {
   text-shadow: 0 0 10px rgba(167, 139, 250, 0.4);
 }
+
+/* Profile Frame Styles */
+
+/* Gold Frame */
+[data-frame="gold_frame"] {
+  border: 4px solid #FFD700 !important;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5), inset 0 0 10px rgba(255, 215, 0, 0.2) !important;
+  border-radius: 0.5rem !important;
+}
+
+/* Pixel Frame */
+[data-frame="pixel_frame"] {
+  border: 4px dashed #A855F7 !important;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.4), inset 0 0 10px rgba(168, 85, 247, 0.1) !important;
+  border-radius: 0.5rem !important;
+  background: linear-gradient(45deg, rgba(168, 85, 247, 0.05) 25%, transparent 25%, transparent 75%, rgba(168, 85, 247, 0.05) 75%, rgba(168, 85, 247, 0.05)), 
+              linear-gradient(45deg, rgba(168, 85, 247, 0.05) 25%, transparent 25%, transparent 75%, rgba(168, 85, 247, 0.05) 75%, rgba(168, 85, 247, 0.05)) !important;
+  background-size: 20px 20px !important;
+  background-position: 0 0, 10px 10px !important;
+}
+
+/* Neon Frame */
+[data-frame="neon_frame"] {
+  border: 4px solid #00FFFF !important;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.8), inset 0 0 15px rgba(0, 255, 255, 0.3), 0 0 50px rgba(0, 255, 255, 0.5) !important;
+  border-radius: 0.5rem !important;
+}
+
+/* Diamond Frame */
+[data-frame="diamond_frame"] {
+  border: 4px solid #93C5FD !important;
+  box-shadow: 0 0 25px rgba(147, 197, 253, 0.6), inset 0 0 12px rgba(147, 197, 253, 0.2) !important;
+  border-radius: 0.5rem !important;
+  position: relative;
+}
+
+[data-frame="diamond_frame"]::before {
+  content: "✦ ✦ ✦ ✦" !important;
+  position: absolute !important;
+  top: -12px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  color: #93C5FD !important;
+  font-size: 12px !important;
+  letter-spacing: 8px !important;
+}
+
+/* Fire Frame */
+[data-frame="fire_frame"] {
+  border: 4px solid #EF4444 !important;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.7), inset 0 0 15px rgba(239, 68, 68, 0.2), 0 0 40px rgba(239, 68, 68, 0.4) !important;
+  border-radius: 0.5rem !important;
+}
+
+/* Crystal Frame */
+[data-frame="crystal_frame"] {
+  border: 4px solid #67E8F9 !important;
+  box-shadow: 0 0 30px rgba(103, 232, 249, 0.7), inset 0 0 15px rgba(103, 232, 249, 0.3) !important;
+  border-radius: 0.5rem !important;
+}

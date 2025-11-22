@@ -94,7 +94,7 @@ export default function Profile() {
         </a>
 
         {/* Profile Header */}
-        <Card className="mb-6">
+        <Card className="mb-6" data-frame={frameCosmetic?.value || undefined} data-testid="card-profile-header">
           <CardHeader>
             <div className="flex items-start justify-between">
               <div>
