@@ -68,6 +68,7 @@ export interface IStorage {
   createTheme(theme: InsertAppTheme): Promise<AppTheme>;
   setActiveTheme(themeId: string): Promise<void>;
   deleteTheme(themeId: string): Promise<void>;
+  disableAllThemes(): Promise<void>;
 
   // Announcements
   createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement>;
@@ -431,6 +432,11 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTheme(themeId: string): Promise<void> {
     await db.delete(appThemes).where(eq(appThemes.id, themeId));
+  }
+
+  async disableAllThemes(): Promise<void> {
+    await db.update(appThemes)
+      .set({ isActive: "false" });
   }
 
   // Announcements

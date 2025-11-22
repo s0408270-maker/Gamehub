@@ -878,6 +878,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/admin/themes/disable-all", async (req, res) => {
+    try {
+      const username = req.body.username;
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.isAdmin !== "true") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      await storage.disableAllThemes();
+      cache.clear();
+      res.json({ message: "All themes disabled" });
+    } catch (error) {
+      console.error("Error disabling themes:", error);
+      res.status(400).json({ message: "Failed to disable themes" });
+    }
+  });
+
   app.post("/api/admin/set-admin", async (req, res) => {
     try {
       const { adminUsername, targetUsername, isAdmin } = req.body;

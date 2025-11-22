@@ -146,6 +146,19 @@ export default function AdminPanel() {
     },
   });
 
+  const disableAllThemesMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/admin/themes/disable-all", { username });
+    },
+    onSuccess: () => {
+      toast({ title: "Themes disabled!", description: "Site returned to default colors." });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/themes/active"] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to disable themes", variant: "destructive" });
+    },
+  });
+
   return (
     <div className="min-h-screen bg-background pt-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
@@ -188,7 +201,7 @@ export default function AdminPanel() {
             <CardTitle>Quick Holiday Themes</CardTitle>
             <CardDescription>Apply pre-made festive themes instantly</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             <Button
               onClick={() => applyChristmasThemeMutation.mutate()}
               disabled={applyChristmasThemeMutation.isPending}
@@ -197,8 +210,17 @@ export default function AdminPanel() {
             >
               {applyChristmasThemeMutation.isPending ? "Creating Christmas Theme..." : "✨ Apply Christmas Frozen Theme"}
             </Button>
+            <Button
+              onClick={() => disableAllThemesMutation.mutate()}
+              disabled={disableAllThemesMutation.isPending}
+              variant="outline"
+              className="w-full"
+              data-testid="button-disable-all-themes"
+            >
+              {disableAllThemesMutation.isPending ? "Disabling..." : "✖️ Disable All Themes"}
+            </Button>
             <p className="text-xs text-muted-foreground">
-              Activate a festive Christmas theme with icy blues and warm holiday colors. Perfect for the season!
+              Activate a festive Christmas theme with icy blues and warm holiday colors. Or disable all themes to return to defaults.
             </p>
           </CardContent>
         </Card>
