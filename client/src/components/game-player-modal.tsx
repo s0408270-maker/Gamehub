@@ -1,6 +1,9 @@
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GameOptionsMenu } from "./game-options-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import type { Game } from "@shared/schema";
 import { useEffect, useState } from "react";
 
@@ -16,8 +19,48 @@ interface GamePlayerModalProps {
 export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
   const [loading, setLoading] = useState(true);
   const [gameUrl, setGameUrl] = useState<string>(`/api/play/${game.id}`);
+  const [difficulty, setDifficulty] = useState<string>("");
+  const [avgDifficulty, setAvgDifficulty] = useState<number>(0);
   const gameType = (game as any).gameType || "html";
   const username = localStorage.getItem("username") || "";
+  const { toast } = useToast();
+
+  // Fetch average difficulty
+  useEffect(() => {
+    if (!open) return;
+    const fetchDifficulty = async () => {
+      try {
+        const res = await fetch(`/api/games/${game.id}/difficulty`);
+        if (res.ok) {
+          const data = await res.json();
+          setAvgDifficulty(data.difficulty || 0);
+        }
+      } catch (err) {
+        console.error("Failed to fetch difficulty:", err);
+      }
+    };
+    fetchDifficulty();
+  }, [open, game.id]);
+
+  // Submit difficulty rating
+  const handleDifficultySubmit = async () => {
+    if (!difficulty || !username) return;
+    try {
+      await apiRequest("POST", `/api/games/${game.id}/rate-difficulty`, {
+        username,
+        difficulty: parseInt(difficulty),
+      });
+      toast({ title: "Success", description: "Difficulty rating submitted!" });
+      setDifficulty("");
+      const res = await fetch(`/api/games/${game.id}/difficulty`);
+      if (res.ok) {
+        const data = await res.json();
+        setAvgDifficulty(data.difficulty || 0);
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to submit rating" });
+    }
+  };
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {

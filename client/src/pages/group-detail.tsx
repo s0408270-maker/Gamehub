@@ -39,6 +39,18 @@ export default function GroupDetail() {
     enabled: !!groupId,
   });
 
+  // Show notification when new messages arrive (only if not your message)
+  const prevMessageCountRef = useRef(0);
+  useEffect(() => {
+    if (messages.length > prevMessageCountRef.current && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage?.user?.username !== username && prevMessageCountRef.current > 0) {
+        toast({ title: "New message", description: `${lastMessage?.user?.username}: ${lastMessage?.content?.substring(0, 50)}...` });
+      }
+    }
+    prevMessageCountRef.current = messages.length;
+  }, [messages, username, toast]);
+
   const { data: games = [], isLoading: gamesLoading } = useQuery<GroupGame[]>({
     queryKey: [`/api/groups/${groupId}/games`],
     enabled: !!groupId,

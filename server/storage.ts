@@ -561,30 +561,39 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  // User blocking - stub implementations (frontend ready)
+  // User blocking
   async blockUser(userId: string, blockedUserId: string): Promise<any> {
-    return { user_id: userId, blocked_user_id: blockedUserId };
+    const result = await db.insert(db.table('blocked_users')).values({ user_id: userId, blocked_user_id: blockedUserId }).returning();
+    return result[0];
   }
 
   async unblockUser(userId: string, blockedUserId: string): Promise<void> {
-    // Stub implementation
+    await db.delete(db.table('blocked_users')).where(and(eq(db.table('blocked_users').column('user_id'), userId), eq(db.table('blocked_users').column('blocked_user_id'), blockedUserId)));
   }
 
   async isUserBlocked(userId: string, blockedUserId: string): Promise<boolean> {
-    return false;
+    const result = await db.select().from(db.table('blocked_users')).where(and(eq(db.table('blocked_users').column('user_id'), userId), eq(db.table('blocked_users').column('blocked_user_id'), blockedUserId))).limit(1);
+    return result.length > 0;
   }
 
   async getBlockedUsers(userId: string): Promise<any[]> {
-    return [];
+    return await db.select().from(db.table('blocked_users')).where(eq(db.table('blocked_users').column('user_id'), userId));
   }
 
-  // Group notifications - stub implementations (frontend ready)
+  // Group notifications
   async toggleGroupNotifications(userId: string, groupId: string, enabled: boolean): Promise<any> {
-    return { notifications_enabled: enabled ? "true" : "false" };
+    const existing = await db.select().from(db.table('group_notification_settings')).where(and(eq(db.table('group_notification_settings').column('user_id'), userId), eq(db.table('group_notification_settings').column('group_id'), groupId))).limit(1);
+    if (existing.length > 0) {
+      const result = await db.update(db.table('group_notification_settings')).set({ notifications_enabled: enabled ? "true" : "false" }).where(and(eq(db.table('group_notification_settings').column('user_id'), userId), eq(db.table('group_notification_settings').column('group_id'), groupId))).returning();
+      return result[0];
+    }
+    const result = await db.insert(db.table('group_notification_settings')).values({ user_id: userId, group_id: groupId, notifications_enabled: enabled ? "true" : "false" }).returning();
+    return result[0];
   }
 
   async getGroupNotificationSetting(userId: string, groupId: string): Promise<any> {
-    return { notifications_enabled: "true" };
+    const result = await db.select().from(db.table('group_notification_settings')).where(and(eq(db.table('group_notification_settings').column('user_id'), userId), eq(db.table('group_notification_settings').column('group_id'), groupId))).limit(1);
+    return result[0] || { notifications_enabled: "true" };
   }
 }
 
