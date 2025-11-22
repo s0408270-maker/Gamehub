@@ -181,6 +181,7 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
               title={game.title}
               referrerPolicy="no-referrer"
               allowFullScreen
+              allow="autoplay; microphone; camera; encrypted-media; accelerometer; gyroscope; payment; usb; vr"
               onLoad={handleIframeLoad}
               data-testid="iframe-game"
             />
