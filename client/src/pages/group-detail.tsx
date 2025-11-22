@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Group, Message, GroupGame, User, UserCosmetic, CosmeticTrade } from "@shared/schema";
+import type { Group, Message, GroupGame, User, UserCosmetic, CosmeticTrade, Cosmetic } from "@shared/schema";
 
 export default function GroupDetail() {
   const [, params] = useRoute("/groups/:groupId");
@@ -52,6 +52,10 @@ export default function GroupDetail() {
   const { data: myCosmeticsData } = useQuery({
     queryKey: [`/api/users/${username}/cosmetics`],
     enabled: !!username,
+  });
+
+  const { data: allCosmetics = [] } = useQuery<Cosmetic[]>({
+    queryKey: ["/api/cosmetics"],
   });
 
   const { data: myTrades = [] } = useQuery<CosmeticTrade[]>({
@@ -139,7 +143,13 @@ export default function GroupDetail() {
   });
 
   // Extract cosmetics from response
-  const myCosmetics = (myCosmeticsData?.owned || []) as UserCosmetic[];
+  const myCosmetics = ((myCosmeticsData as any)?.owned || []) as UserCosmetic[];
+
+  // Helper function to get cosmetic name by ID
+  const getCosmeticName = (cosmeticId: string) => {
+    const cosmetic = allCosmetics.find(c => c.id === cosmeticId);
+    return cosmetic?.name || cosmeticId.slice(0, 8);
+  };
 
   if (groupLoading) {
     return (
@@ -323,11 +333,11 @@ export default function GroupDetail() {
                         <SelectValue placeholder="Choose a member..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {groupMembers
-                          .filter(m => m.username !== username)
-                          .map(member => (
-                            <SelectItem key={member.id} value={member.id} data-testid={`option-member-${member.id}`}>
-                              {member.username}
+                        {(groupMembers as any[])
+                          ?.filter((m: any) => m.user?.username !== username)
+                          .map((member: any) => (
+                            <SelectItem key={member.userId} value={member.userId} data-testid={`option-member-${member.userId}`}>
+                              {member.user?.username || "Unknown"}
                             </SelectItem>
                           ))}
                       </SelectContent>
@@ -357,7 +367,7 @@ export default function GroupDetail() {
                                 data-testid={`button-select-sender-cosmetic-${cosmetic.id}`}
                                 className="h-auto py-2"
                               >
-                                <span className="text-xs">{cosmetic.cosmeticId.slice(0, 8)}...</span>
+                                <span className="text-xs font-medium">{getCosmeticName(cosmetic.cosmeticId)}</span>
                               </Button>
                             ))
                           )}
@@ -397,10 +407,10 @@ export default function GroupDetail() {
                       {myTrades
                         .filter(t => t.status === "pending")
                         .map(trade => {
-                          const sender = groupMembers.find(m => m.id === trade.senderId);
+                          const sender = (groupMembers as any[])?.find((m: any) => m.userId === trade.senderId);
                           return (
                             <div key={trade.id} className="border rounded-lg p-3 space-y-2" data-testid={`trade-request-${trade.id}`}>
-                              <p className="text-sm font-medium">{sender?.username} wants to trade</p>
+                              <p className="text-sm font-medium">{sender?.user?.username || "Unknown"} wants to trade</p>
                               <p className="text-xs text-muted-foreground">
                                 Offering {JSON.parse(trade.senderCosmeticIds).length} items • Requesting {JSON.parse(trade.receiverCosmeticIds).length} items
                               </p>
