@@ -10,7 +10,8 @@ export function AnnouncementBanner() {
   
   const { data: announcement, refetch } = useQuery<Announcement | null>({
     queryKey: ["/api/announcements/active"],
-    refetchInterval: 3000, // Poll every 3 seconds for new announcements
+    refetchInterval: 1000, // Poll every 1 second for new announcements
+    refetchIntervalInBackground: true,
   });
 
   useEffect(() => {
