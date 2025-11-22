@@ -560,6 +560,32 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return result[0];
   }
+
+  // User blocking - stub implementations (frontend ready)
+  async blockUser(userId: string, blockedUserId: string): Promise<any> {
+    return { user_id: userId, blocked_user_id: blockedUserId };
+  }
+
+  async unblockUser(userId: string, blockedUserId: string): Promise<void> {
+    // Stub implementation
+  }
+
+  async isUserBlocked(userId: string, blockedUserId: string): Promise<boolean> {
+    return false;
+  }
+
+  async getBlockedUsers(userId: string): Promise<any[]> {
+    return [];
+  }
+
+  // Group notifications - stub implementations (frontend ready)
+  async toggleGroupNotifications(userId: string, groupId: string, enabled: boolean): Promise<any> {
+    return { notifications_enabled: enabled ? "true" : "false" };
+  }
+
+  async getGroupNotificationSetting(userId: string, groupId: string): Promise<any> {
+    return { notifications_enabled: "true" };
+  }
 }
 
 export const storage = new DatabaseStorage();

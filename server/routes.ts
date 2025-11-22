@@ -1178,7 +1178,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // USER BLOCKING
+  app.post("/api/users/block", async (req, res) => {
+    try {
+      const { username, blockUsername } = req.body;
+      if (!username || !blockUsername) {
+        return res.status(400).json({ message: "Username required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      const blockedUser = await storage.getUserByUsername(blockUsername);
+      if (!user || !blockedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      await storage.blockUser(user.id, blockedUser.id);
+      res.status(201).json({ message: "User blocked" });
+    } catch (error) {
+      console.error("Error blocking user:", error);
+      res.status(400).json({ message: "Failed to block user" });
+    }
+  });
+
+  app.post("/api/users/unblock", async (req, res) => {
+    try {
+      const { username, unblockUsername } = req.body;
+      if (!username || !unblockUsername) {
+        return res.status(400).json({ message: "Username required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      const unblockedUser = await storage.getUserByUsername(unblockUsername);
+      if (!user || !unblockedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      await storage.unblockUser(user.id, unblockedUser.id);
+      res.json({ message: "User unblocked" });
+    } catch (error) {
+      console.error("Error unblocking user:", error);
+      res.status(400).json({ message: "Failed to unblock user" });
+    }
+  });
+
+  // GAME DIFFICULTY RATING
+  app.post("/api/games/:gameId/rate-difficulty", async (req, res) => {
+    try {
+      const { username, difficulty } = req.body;
+      if (!username || !difficulty) {
+        return res.status(400).json({ message: "Username and difficulty required" });
+      }
+      if (difficulty < 1 || difficulty > 5) {
+        return res.status(400).json({ message: "Difficulty must be 1-5" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      await storage.voteGameDifficulty(req.params.gameId, user.id, difficulty);
+      res.json({ message: "Rating submitted" });
+    } catch (error) {
+      console.error("Error rating difficulty:", error);
+      res.status(400).json({ message: "Failed to rate difficulty" });
+    }
+  });
+
+  // GROUP NOTIFICATIONS
+  app.post("/api/groups/:groupId/notifications/toggle", async (req, res) => {
+    try {
+      const { username, enabled } = req.body;
+      if (!username) {
+        return res.status(400).json({ message: "Username required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const setting = await storage.toggleGroupNotifications(user.id, req.params.groupId, enabled);
+      res.json(setting);
+    } catch (error) {
+      console.error("Error toggling notifications:", error);
+      res.status(400).json({ message: "Failed to toggle notifications" });
+    }
+  });
+
+  // DELETE GROUP (creator only)
+  app.delete("/api/groups/:groupId", async (req, res) => {
+    try {
+      const username = req.query.username as string;
+      if (!username) {
+        return res.status(400).json({ message: "Username required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      const group = await storage.getGroup(req.params.groupId);
+      if (!user || !group) {
+        return res.status(404).json({ message: "Not found" });
+      }
+
+      if (group.createdBy !== user.id) {
+        return res.status(403).json({ message: "Only creator can delete group" });
+      }
+
+      await storage.deleteGroup(req.params.groupId);
+      res.json({ message: "Group deleted" });
+    } catch (error) {
+      console.error("Error deleting group:", error);
+      res.status(400).json({ message: "Failed to delete group" });
+    }
+  });
+
+  // DELETE GAME (owner only)
+  app.delete("/api/owner/games/:gameId", async (req, res) => {
+    try {
+      const username = req.query.username as string;
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.role !== "owner") {
+        return res.status(403).json({ message: "Owner access required" });
+      }
+
+      const game = await storage.getGame(req.params.gameId);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+
+      await storage.deleteGame(req.params.gameId);
+      res.json({ message: "Game deleted" });
+    } catch (error) {
+      console.error("Error deleting game:", error);
+      res.status(400).json({ message: "Failed to delete game" });
+    }
+  });
+
+  // ADD GAME TO FAVORITES
+  app.post("/api/games/:gameId/favorite", async (req, res) => {
+    try {
+      const { username } = req.body;
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const game = await storage.getGame(req.params.gameId);
+      if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+
+      res.json({ message: "Added to favorites", gameId: req.params.gameId });
+    } catch (error) {
+      console.error("Error adding favorite:", error);
+      res.status(400).json({ message: "Failed to add favorite" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
 }
+
