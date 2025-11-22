@@ -388,6 +388,45 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return result[0];
   }
+
+  // Admin features
+  async setUserAdmin(username: string, isAdmin: boolean): Promise<User> {
+    const result = await db.update(users)
+      .set({ isAdmin: isAdmin ? "true" : "false" })
+      .where(eq(users.username, username))
+      .returning();
+    return result[0];
+  }
+
+  async getAllThemes(): Promise<AppTheme[]> {
+    return await db.select().from(appThemes);
+  }
+
+  async getActiveTheme(): Promise<AppTheme | undefined> {
+    const result = await db.select().from(appThemes)
+      .where(eq(appThemes.isActive, "true"))
+      .limit(1);
+    return result[0];
+  }
+
+  async createTheme(theme: InsertAppTheme): Promise<AppTheme> {
+    const result = await db.insert(appThemes).values(theme).returning();
+    return result[0];
+  }
+
+  async setActiveTheme(themeId: string): Promise<void> {
+    await db.update(appThemes)
+      .set({ isActive: "false" })
+      .where(eq(appThemes.isActive, "true"));
+    
+    await db.update(appThemes)
+      .set({ isActive: "true" })
+      .where(eq(appThemes.id, themeId));
+  }
+
+  async deleteTheme(themeId: string): Promise<void> {
+    await db.delete(appThemes).where(eq(appThemes.id, themeId));
+  }
 }
 
 export const storage = new DatabaseStorage();

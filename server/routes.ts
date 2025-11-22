@@ -798,6 +798,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ADMIN ROUTES
+  app.get("/api/admin/themes", async (req, res) => {
+    try {
+      const themes = await storage.getAllThemes();
+      res.json(themes);
+    } catch (error) {
+      console.error("Error fetching themes:", error);
+      res.status(500).json({ message: "Failed to fetch themes" });
+    }
+  });
+
+  app.get("/api/admin/themes/active", async (req, res) => {
+    try {
+      const theme = await storage.getActiveTheme();
+      res.json(theme || null);
+    } catch (error) {
+      console.error("Error fetching active theme:", error);
+      res.status(500).json({ message: "Failed to fetch active theme" });
+    }
+  });
+
+  app.post("/api/admin/themes", async (req, res) => {
+    try {
+      const username = req.body.username;
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.isAdmin !== "true") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { name, cssOverrides, description } = req.body;
+      if (!name || !cssOverrides) {
+        return res.status(400).json({ message: "Name and cssOverrides required" });
+      }
+
+      const theme = await storage.createTheme({
+        name,
+        cssOverrides,
+        description,
+        isActive: "false",
+      });
+      res.status(201).json(theme);
+    } catch (error) {
+      console.error("Error creating theme:", error);
+      res.status(400).json({ message: "Failed to create theme" });
+    }
+  });
+
+  app.post("/api/admin/themes/:themeId/activate", async (req, res) => {
+    try {
+      const username = req.body.username;
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.isAdmin !== "true") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      await storage.setActiveTheme(req.params.themeId);
+      cache.clear();
+      res.json({ message: "Theme activated" });
+    } catch (error) {
+      console.error("Error activating theme:", error);
+      res.status(400).json({ message: "Failed to activate theme" });
+    }
+  });
+
+  app.delete("/api/admin/themes/:themeId", async (req, res) => {
+    try {
+      const username = req.body.username;
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.isAdmin !== "true") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      await storage.deleteTheme(req.params.themeId);
+      res.json({ message: "Theme deleted" });
+    } catch (error) {
+      console.error("Error deleting theme:", error);
+      res.status(400).json({ message: "Failed to delete theme" });
+    }
+  });
+
+  app.post("/api/admin/set-admin", async (req, res) => {
+    try {
+      const { adminUsername, targetUsername, isAdmin } = req.body;
+      const admin = await storage.getUserByUsername(adminUsername);
+      if (!admin || admin.isAdmin !== "true") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const user = await storage.setUserAdmin(targetUsername, isAdmin);
+      res.json(user);
+    } catch (error) {
+      console.error("Error setting admin:", error);
+      res.status(400).json({ message: "Failed to set admin" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

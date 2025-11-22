@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Gamepad2, Users, ChevronDown, LogOut, Trophy, Zap, Flame } from "lucide-react";
+import { Gamepad2, Users, ChevronDown, LogOut, Trophy, Zap, Flame, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -23,6 +23,7 @@ import GroupDetail from "@/pages/group-detail";
 import Leaderboard from "@/pages/leaderboard";
 import CosmeticsShop from "@/pages/cosmetics-shop";
 import BattlePass from "@/pages/battle-pass";
+import AdminPanel from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { Group, User } from "@shared/schema";
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/groups/:groupId" component={GroupDetail} />
       <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/battle-pass" component={BattlePass} />
+      <Route path="/admin" component={AdminPanel} />
       <Route path="/shop" component={CosmeticsShop} />
       <Route component={NotFound} />
     </Switch>
@@ -55,7 +57,7 @@ function Header() {
     enabled: !!username,
   });
 
-  const currentTab = location === "/" ? "games" : location === "/leaderboard" ? "leaderboard" : location === "/battle-pass" ? "battle-pass" : location === "/shop" ? "shop" : location.startsWith("/groups") ? "groups" : "games";
+  const currentTab = location === "/" ? "games" : location === "/leaderboard" ? "leaderboard" : location === "/battle-pass" ? "battle-pass" : location === "/shop" ? "shop" : location === "/admin" ? "admin" : location.startsWith("/groups") ? "groups" : "games";
   const isInGroup = location.startsWith("/groups/") && location !== "/groups";
 
   const handleLogout = () => {
@@ -147,6 +149,7 @@ function Header() {
             else if (tab === "leaderboard") setLocation("/leaderboard");
             else if (tab === "battle-pass") setLocation("/battle-pass");
             else if (tab === "shop") setLocation("/shop");
+            else if (tab === "admin") setLocation("/admin");
           }} className="w-full">
             <TabsList className="w-full justify-start h-auto bg-transparent p-0 rounded-none border-b border-border/50 overflow-x-auto">
               <TabsTrigger value="games" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-games">
@@ -169,6 +172,12 @@ function Header() {
                 <Zap className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Shop</span>
               </TabsTrigger>
+              {currentUser?.isAdmin === "true" && (
+                <TabsTrigger value="admin" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-admin">
+                  <Wrench className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Admin</span>
+                </TabsTrigger>
+              )}
             </TabsList>
           </Tabs>
         </div>
@@ -180,12 +189,24 @@ function Header() {
 function AppContent() {
   const username = localStorage.getItem("username");
   const [, setLocation] = useLocation();
+  const { data: activeTheme } = useQuery<{ cssOverrides: string } | null>({
+    queryKey: ["/api/admin/themes/active"],
+  });
 
   useEffect(() => {
     if (!username) {
       setLocation("/auth");
     }
   }, [username, setLocation]);
+
+  useEffect(() => {
+    if (activeTheme?.cssOverrides) {
+      const style = document.createElement("style");
+      style.textContent = `:root { ${activeTheme.cssOverrides} }`;
+      document.head.appendChild(style);
+      return () => style.remove();
+    }
+  }, [activeTheme]);
 
   if (!username) {
     return <Auth />;
