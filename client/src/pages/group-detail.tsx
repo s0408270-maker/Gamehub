@@ -228,10 +228,10 @@ export default function GroupDetail() {
               <DialogTrigger asChild>
                 <Button
                   variant="destructive"
-                  size="icon"
                   data-testid="button-delete-group"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
                 </Button>
               </DialogTrigger>
               <DialogContent data-testid="dialog-delete-group">
@@ -239,7 +239,7 @@ export default function GroupDetail() {
                   <DialogTitle>Delete Group?</DialogTitle>
                 </DialogHeader>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Are you sure you want to delete "{group.name}"? This action cannot be undone.
+                  Are you sure you want to delete "{group.name}"?
                 </p>
                 <div className="flex gap-2 justify-end">
                   <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} data-testid="button-cancel-delete">
