@@ -15,7 +15,11 @@ export function GameDifficultyVote({ gameId }: GameDifficultyVoteProps) {
   const [selectedDifficulty, setSelectedDifficulty] = useState<number | null>(null);
   const username = localStorage.getItem("username") || "";
 
-  const { data: difficultyData } = useQuery({
+  const { data: difficultyData } = useQuery<{
+    average: number;
+    totalVotes: number;
+    votes: unknown[];
+  }>({
     queryKey: [`/api/games/${gameId}/difficulty`],
   });
 

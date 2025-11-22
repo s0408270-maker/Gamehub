@@ -12,7 +12,10 @@ export default function BattlePass() {
   const { toast } = useToast();
   const username = localStorage.getItem("username") || "";
 
-  const { data: battlePassData, isLoading } = useQuery({
+  const { data: battlePassData, isLoading } = useQuery<{
+    progress: { currentSeason: number; currentTier: number; experience: number; hasPremiumPass: string };
+    tiers: unknown[];
+  }>({
     queryKey: [`/api/battlepass/${username}`],
   });
 

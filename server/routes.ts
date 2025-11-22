@@ -135,6 +135,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const htmlPath = path.join(process.cwd(), game.htmlPath.replace("/uploads/", "uploads/"));
       
+      // Check if file exists
+      try {
+        await fs.access(htmlPath);
+      } catch {
+        console.error(`Game file not found at ${htmlPath}`);
+        return res.status(404).send("Game file not found. It may have been deleted.");
+      }
+      
       // Allow games to load external content and run scripts
       // Removed restrictive COEP/COOP headers to allow external iframes
       res.setHeader("Content-Type", "text/html; charset=utf-8");
