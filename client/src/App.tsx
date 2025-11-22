@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Gamepad2, Users, ChevronDown, LogOut, Trophy, Zap, Flame, Wrench, Package } from "lucide-react";
+import { Gamepad2, Users, ChevronDown, LogOut, Trophy, Zap, Flame, Wrench, Package, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserSearchDialog } from "@/components/user-search-dialog";
 import {
@@ -30,6 +30,7 @@ import AdminPanel from "@/pages/admin";
 import OwnerPanel from "@/pages/owner";
 import Profile from "@/pages/profile";
 import UsersPage from "@/pages/users";
+import Donations from "@/pages/donations";
 import NotFound from "@/pages/not-found";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AnnouncementBanner } from "@/components/announcement-banner";
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/shop" component={CosmeticsShop} />
       <Route path="/inventory" component={CosmeticsInventory} />
       <Route path="/premium-games" component={PremiumGamesShop} />
+      <Route path="/donations" component={Donations} />
       <Route path="/profile/:username" component={Profile} />
       <Route path="/users" component={UsersPage} />
       <Route component={NotFound} />
@@ -69,7 +71,7 @@ function Header() {
     enabled: !!username,
   });
 
-  const currentTab = location === "/" ? "games" : location === "/leaderboard" ? "leaderboard" : location === "/battle-pass" ? "battle-pass" : location === "/shop" ? "shop" : location === "/inventory" ? "inventory" : location === "/premium-games" ? "premium-games" : location === "/admin" ? "admin" : location === "/owner" ? "owner" : location.startsWith("/groups") ? "groups" : "games";
+  const currentTab = location === "/" ? "games" : location === "/leaderboard" ? "leaderboard" : location === "/battle-pass" ? "battle-pass" : location === "/shop" ? "shop" : location === "/inventory" ? "inventory" : location === "/premium-games" ? "premium-games" : location === "/donations" ? "donations" : location === "/admin" ? "admin" : location === "/owner" ? "owner" : location.startsWith("/groups") ? "groups" : "games";
   const isInGroup = location.startsWith("/groups/") && location !== "/groups";
 
   const handleLogout = () => {
@@ -171,6 +173,7 @@ function Header() {
             else if (tab === "premium-games") setLocation("/premium-games");
             else if (tab === "admin") setLocation("/admin");
             else if (tab === "owner") setLocation("/owner");
+            if (tab === "donations") setLocation("/donations");
           }} className="w-full">
             <TabsList className="w-full justify-start h-auto bg-transparent p-0 rounded-none border-b border-border/50 overflow-x-auto">
               <TabsTrigger value="games" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-games">
@@ -200,6 +203,10 @@ function Header() {
               <TabsTrigger value="premium-games" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-premium-games">
                 <Gamepad2 className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Premium</span>
+              </TabsTrigger>
+              <TabsTrigger value="donations" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-donations">
+                <Heart className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Donate</span>
               </TabsTrigger>
               {(currentUser?.isAdmin === "true" || currentUser?.role === "admin") && (
                 <TabsTrigger value="admin" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-admin">
