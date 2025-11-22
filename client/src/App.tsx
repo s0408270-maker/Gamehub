@@ -27,6 +27,7 @@ import PremiumGamesShop from "@/pages/premium-games-shop";
 import BattlePass from "@/pages/battle-pass";
 import AdminPanel from "@/pages/admin";
 import OwnerPanel from "@/pages/owner";
+import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AnnouncementBanner } from "@/components/announcement-banner";
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/shop" component={CosmeticsShop} />
       <Route path="/inventory" component={CosmeticsInventory} />
       <Route path="/premium-games" component={PremiumGamesShop} />
+      <Route path="/profile/:username" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );
