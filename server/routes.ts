@@ -824,7 +824,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const username = req.body.username;
       const user = await storage.getUserByUsername(username);
-      if (!user || user.isAdmin !== "true") {
+      if (!user || (user.isAdmin !== "true" && user.role !== "admin" && user.role !== "owner")) {
         return res.status(403).json({ message: "Admin access required" });
       }
 
@@ -850,7 +850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const username = req.body.username;
       const user = await storage.getUserByUsername(username);
-      if (!user || user.isAdmin !== "true") {
+      if (!user || (user.isAdmin !== "true" && user.role !== "admin" && user.role !== "owner")) {
         return res.status(403).json({ message: "Admin access required" });
       }
 
@@ -867,7 +867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const username = req.body.username;
       const user = await storage.getUserByUsername(username);
-      if (!user || user.isAdmin !== "true") {
+      if (!user || (user.isAdmin !== "true" && user.role !== "admin" && user.role !== "owner")) {
         return res.status(403).json({ message: "Admin access required" });
       }
 
@@ -883,7 +883,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const username = req.body.username;
       const user = await storage.getUserByUsername(username);
-      if (!user || user.isAdmin !== "true") {
+      if (!user || (user.isAdmin !== "true" && user.role !== "admin" && user.role !== "owner")) {
         return res.status(403).json({ message: "Admin access required" });
       }
 
@@ -900,7 +900,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { adminUsername, targetUsername, isAdmin } = req.body;
       const admin = await storage.getUserByUsername(adminUsername);
-      if (!admin || admin.isAdmin !== "true") {
+      if (!admin || (admin.isAdmin !== "true" && admin.role !== "admin" && admin.role !== "owner")) {
         return res.status(403).json({ message: "Admin access required" });
       }
 
@@ -927,7 +927,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const username = req.body.username;
       const user = await storage.getUserByUsername(username);
-      if (!user || user.isAdmin !== "true") {
+      if (!user || (user.isAdmin !== "true" && user.role !== "admin" && user.role !== "owner")) {
         return res.status(403).json({ message: "Admin access required" });
       }
 
