@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mercury Games</title>
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: Arial, sans-serif;
+}
+iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+}
+.container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+.error-message {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+.error-message h2 {
+    margin: 0;
+    font-size: 24px;
+}
+.error-message p {
+    margin: 0;
+    font-size: 14px;
+    color: #aaa;
+}
+.retry-btn {
+    padding: 10px 20px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+.retry-btn:hover {
+    background: #45a049;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <iframe id="game-iframe" src="https://mercurygames-15327267.codehs.me/game42.html" allow="fullscreen; accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="true"></iframe>
+</div>
+
+<script>
+// Monitor iframe loading
+const iframe = document.getElementById('game-iframe');
+let loaded = false;
+let showedError = false;
+
+iframe.onload = function() {
+    loaded = true;
+    console.log('iframe loaded');
+};
+
+iframe.onerror = function() {
+    console.log('iframe error');
+    if (!showedError) {
+        showedError = true;
+        showError('Unable to load game from external server');
+    }
+};
+
+// Timeout to show error if iframe doesn't load
+setTimeout(() => {
+    if (!loaded && !showedError) {
+        showedError = true;
+        showError('The game server is not responding. Try again.');
+    }
+}, 5000);
+
+function showError(message) {
+    const container = document.querySelector('.container');
+    container.innerHTML = `
+        <div class="error-message">
+            <h2>⚠️ Game Error</h2>
+            <p>${message}</p>
+            <button class="retry-btn" onclick="location.reload()">Retry</button>
+        </div>
+    `;
+}
+
+// Check if iframe is actually rendering
+setTimeout(() => {
+    try {
+        // Try to access iframe content
+        if (!iframe.contentDocument && !loaded && !showedError) {
+            console.log('Cannot access iframe content');
+        }
+    } catch (e) {
+        console.log('Cross-origin iframe - expected behavior');
+    }
+}, 2000);
+</script>
+</body>
+</html>
