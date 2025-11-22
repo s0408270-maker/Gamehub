@@ -541,7 +541,15 @@ export class DatabaseStorage implements IStorage {
 
   // Announcements
   async createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement> {
-    const result = await db.insert(announcements).values(announcement).returning();
+    // Deactivate all current announcements
+    await db.update(announcements)
+      .set({ isActive: "false" });
+    
+    // Create and activate the new announcement
+    const result = await db.insert(announcements).values({
+      ...announcement,
+      isActive: "true"
+    }).returning();
     return result[0];
   }
 
