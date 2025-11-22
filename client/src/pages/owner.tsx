@@ -417,44 +417,46 @@ export default function OwnerPanel() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {allUsers.length === 0 ? (
-                <p className="text-muted-foreground">No users found</p>
+              {allUsers.filter(u => u.username !== username).length === 0 ? (
+                <p className="text-muted-foreground">No other users found</p>
               ) : (
-                allUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between p-3 border rounded-md"
-                    data-testid={`user-item-${user.id}`}
-                  >
-                    <div>
-                      <h3 className="font-semibold">{user.username}</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {user.isBanned === "true" ? "🚫 BANNED" : "Active"}
-                      </p>
+                allUsers
+                  .filter(u => u.username !== username)
+                  .map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex items-center justify-between p-3 border rounded-md"
+                      data-testid={`user-item-${user.id}`}
+                    >
+                      <div>
+                        <h3 className="font-semibold">{user.username}</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {user.isBanned === "true" ? "BANNED" : "Active"}
+                        </p>
+                      </div>
+                      {user.isBanned === "true" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => unbanUserMutation.mutate(user.username)}
+                          disabled={unbanUserMutation.isPending}
+                          data-testid={`button-unban-${user.id}`}
+                        >
+                          Unban
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => banUserMutation.mutate(user.username)}
+                          disabled={banUserMutation.isPending}
+                          data-testid={`button-ban-${user.id}`}
+                        >
+                          <Ban className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
-                    {user.isBanned === "true" ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => unbanUserMutation.mutate(user.username)}
-                        disabled={unbanUserMutation.isPending}
-                        data-testid={`button-unban-${user.id}`}
-                      >
-                        Unban
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => banUserMutation.mutate(user.username)}
-                        disabled={banUserMutation.isPending}
-                        data-testid={`button-ban-${user.id}`}
-                      >
-                        <Ban className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))
+                  ))
               )}
             </div>
           </CardContent>
