@@ -15,7 +15,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Game } from "@shared/schema";
 
 interface GameOptionsMenuProps {
-  game: Game;
+  game: Game & { creatorUsername?: string };
   createdBy: string;
 }
 
@@ -26,6 +26,7 @@ export function GameOptionsMenu({ game, createdBy }: GameOptionsMenuProps) {
   const [gameRating, setGameRating] = useState(0);
   const [difficultyRating, setDifficultyRating] = useState(0);
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const creatorUsername = (game as any).creatorUsername || "Unknown";
 
   const rateGameMutation = useMutation({
     mutationFn: async () => {
@@ -55,11 +56,11 @@ export function GameOptionsMenu({ game, createdBy }: GameOptionsMenuProps) {
     mutationFn: async () => {
       return await apiRequest("POST", `/api/users/block`, {
         username,
-        blockUsername: createdBy,
+        blockUsername: creatorUsername,
       });
     },
     onSuccess: () => {
-      toast({ title: "Blocked", description: `Blocked ${createdBy}` });
+      toast({ title: "Blocked", description: `Blocked ${creatorUsername}` });
       setBlockDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ["/api/users/blocked"] });
     },

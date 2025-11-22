@@ -6,6 +6,8 @@ export interface IStorage {
   // Games
   getAllGames(): Promise<Game[]>;
   getGame(id: string): Promise<Game | undefined>;
+  getAllGamesWithCreator(): Promise<(Game & { creatorUsername: string })[]>;
+  getGameWithCreator(id: string): Promise<(Game & { creatorUsername: string }) | undefined>;
   createGame(game: InsertGame): Promise<Game>;
   deleteGame(id: string): Promise<void>;
   
@@ -100,6 +102,45 @@ export class DatabaseStorage implements IStorage {
   async getGame(id: string): Promise<Game | undefined> {
     const result = await db.select().from(games).where(eq(games.id, id)).limit(1);
     return result[0];
+  }
+
+  async getAllGamesWithCreator(): Promise<(Game & { creatorUsername: string })[]> {
+    const results = await db.select({
+      id: games.id,
+      title: games.title,
+      htmlPath: games.htmlPath,
+      thumbnail: games.thumbnail,
+      createdBy: games.createdBy,
+      createdAt: games.createdAt,
+      tier: games.tier,
+      description: games.description,
+      creatorUsername: users.username,
+    }).from(games).leftJoin(users, eq(games.createdBy, users.id));
+    
+    return results.map(r => ({
+      ...r,
+      creatorUsername: r.creatorUsername || "Unknown",
+    }));
+  }
+
+  async getGameWithCreator(id: string): Promise<(Game & { creatorUsername: string }) | undefined> {
+    const result = await db.select({
+      id: games.id,
+      title: games.title,
+      htmlPath: games.htmlPath,
+      thumbnail: games.thumbnail,
+      createdBy: games.createdBy,
+      createdAt: games.createdAt,
+      tier: games.tier,
+      description: games.description,
+      creatorUsername: users.username,
+    }).from(games).leftJoin(users, eq(games.createdBy, users.id)).where(eq(games.id, id)).limit(1);
+    
+    if (!result[0]) return undefined;
+    return {
+      ...result[0],
+      creatorUsername: result[0].creatorUsername || "Unknown",
+    };
   }
 
   async createGame(insertGame: InsertGame): Promise<Game> {
