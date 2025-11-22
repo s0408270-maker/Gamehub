@@ -179,10 +179,10 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
               src={gameUrl}
               className="w-full h-full border-0"
               title={game.title}
-              sandbox="allow-scripts allow-forms allow-pointer-lock allow-same-origin allow-top-navigation allow-popups allow-presentation allow-popups-to-escape-sandbox"
+              sandbox="allow-scripts allow-forms allow-pointer-lock allow-same-origin allow-top-navigation allow-popups allow-presentation allow-popups-to-escape-sandbox allow-downloads"
               referrerPolicy="no-referrer"
               allowFullScreen
-              allow="autoplay; microphone; camera; encrypted-media"
+              allow="autoplay *; microphone *; camera *; encrypted-media *"
               onLoad={handleIframeLoad}
               data-testid="iframe-game"
             />
