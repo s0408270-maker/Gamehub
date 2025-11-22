@@ -182,6 +182,7 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
               sandbox="allow-scripts allow-forms allow-pointer-lock allow-same-origin allow-top-navigation allow-popups allow-presentation allow-popups-to-escape-sandbox"
               referrerPolicy="no-referrer"
               allowFullScreen
+              allow="autoplay; microphone; camera; encrypted-media"
               onLoad={handleIframeLoad}
               data-testid="iframe-game"
             />
