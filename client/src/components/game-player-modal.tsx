@@ -1,5 +1,6 @@
-import { X, Loader2, AlertCircle } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GameDifficultyVote } from "./game-difficulty-vote";
 import type { Game } from "@shared/schema";
 import { useEffect, useState } from "react";
 
@@ -185,6 +186,11 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
               data-testid="iframe-game"
             />
           )}
+        </div>
+
+        {/* Difficulty Vote */}
+        <div className="mt-2 sm:mt-4">
+          <GameDifficultyVote gameId={game.id} />
         </div>
 
         <p className="text-center text-white/60 text-xs sm:text-sm mt-2 sm:mt-4 px-2" data-testid="text-close-instruction">

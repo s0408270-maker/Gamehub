@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Gamepad2, Users, ChevronDown, LogOut, Trophy, Zap } from "lucide-react";
+import { Gamepad2, Users, ChevronDown, LogOut, Trophy, Zap, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -22,6 +22,7 @@ import Groups from "@/pages/groups";
 import GroupDetail from "@/pages/group-detail";
 import Leaderboard from "@/pages/leaderboard";
 import CosmeticsShop from "@/pages/cosmetics-shop";
+import BattlePass from "@/pages/battle-pass";
 import NotFound from "@/pages/not-found";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { Group, User } from "@shared/schema";
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/groups" component={Groups} />
       <Route path="/groups/:groupId" component={GroupDetail} />
       <Route path="/leaderboard" component={Leaderboard} />
+      <Route path="/battle-pass" component={BattlePass} />
       <Route path="/shop" component={CosmeticsShop} />
       <Route component={NotFound} />
     </Switch>
@@ -53,7 +55,7 @@ function Header() {
     enabled: !!username,
   });
 
-  const currentTab = location === "/" ? "games" : location === "/leaderboard" ? "leaderboard" : location === "/shop" ? "shop" : location.startsWith("/groups") ? "groups" : "games";
+  const currentTab = location === "/" ? "games" : location === "/leaderboard" ? "leaderboard" : location === "/battle-pass" ? "battle-pass" : location === "/shop" ? "shop" : location.startsWith("/groups") ? "groups" : "games";
   const isInGroup = location.startsWith("/groups/") && location !== "/groups";
 
   const handleLogout = () => {
@@ -143,6 +145,7 @@ function Header() {
             if (tab === "games") setLocation("/");
             else if (tab === "groups") setLocation("/groups");
             else if (tab === "leaderboard") setLocation("/leaderboard");
+            else if (tab === "battle-pass") setLocation("/battle-pass");
             else if (tab === "shop") setLocation("/shop");
           }} className="w-full">
             <TabsList className="w-full justify-start h-auto bg-transparent p-0 rounded-none border-b border-border/50 overflow-x-auto">
@@ -157,6 +160,10 @@ function Header() {
               <TabsTrigger value="leaderboard" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-leaderboard">
                 <Trophy className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Leaderboard</span>
+              </TabsTrigger>
+              <TabsTrigger value="battle-pass" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-battle-pass">
+                <Flame className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Battle Pass</span>
               </TabsTrigger>
               <TabsTrigger value="shop" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-shop">
                 <Zap className="w-4 h-4 mr-2" />
