@@ -99,8 +99,8 @@ export default function AdminPanel() {
         description: preset.description,
       });
     },
-    onSuccess: (theme) => {
-      toast({ title: "Theme added!", description: `${theme.name} has been added to available themes.` });
+    onSuccess: () => {
+      toast({ title: "Theme added!", description: "Theme has been added to available themes." });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
       setCustomThemeName("");
       setCustomThemeCss("");
