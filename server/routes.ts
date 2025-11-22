@@ -6,7 +6,6 @@ import fs from "fs/promises";
 import { storage } from "./storage";
 import { cache } from "./cache";
 import { insertGameSchema, insertGroupSchema, insertGroupGameSchema, insertMessageSchema } from "@shared/schema";
-import { getUncachableStripeClient } from "./stripeClient";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 const gamesDir = path.join(uploadDir, "games");
@@ -1343,71 +1342,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error adding favorite:", error);
       res.status(400).json({ message: "Failed to add favorite" });
-    }
-  });
-
-  // STRIPE CHECKOUT - Finish Battle Pass
-  app.post("/api/stripe/checkout-finish-battlepass", async (req: any, res) => {
-    try {
-      const { username, priceId } = req.body;
-      
-      if (!priceId) {
-        return res.status(400).json({ message: "Price ID required" });
-      }
-
-      const stripe = await getUncachableStripeClient();
-
-      // Create checkout session with username in metadata
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        line_items: [
-          {
-            price: priceId,
-            quantity: 1,
-          },
-        ],
-        mode: "payment",
-        metadata: {
-          username: username || "guest",
-        },
-        success_url: `${req.protocol}://${req.get("host")}/battle-pass?success=true`,
-        cancel_url: `${req.protocol}://${req.get("host")}/battle-pass`,
-      });
-
-      return res.status(200).json({ 
-        sessionUrl: session.url,
-        sessionId: session.id
-      });
-    } catch (error) {
-      console.error("Stripe checkout error:", error);
-      res.status(500).json({ message: "Checkout failed" });
-    }
-  });
-
-  // STRIPE WEBHOOK - Handle payment success
-  app.post("/api/stripe/webhook", async (req: any, res) => {
-    try {
-      const event = req.body;
-      
-      // Handle successful payment
-      if (event.type === "checkout.session.completed") {
-        const session = event.data.object;
-        const username = session.metadata?.username;
-
-        if (username) {
-          const user = await storage.getUserByUsername(username);
-          if (user) {
-            // Complete all 50 tiers for the user
-            await storage.finishBattlePass(user.id);
-            console.log(`Battle pass completed for user: ${username}`);
-          }
-        }
-      }
-
-      res.status(200).json({ received: true });
-    } catch (error) {
-      console.error("Webhook error:", error);
-      res.status(400).json({ error: "Webhook processing failed" });
     }
   });
 

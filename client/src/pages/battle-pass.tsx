@@ -32,27 +32,6 @@ export default function BattlePass() {
     },
   });
 
-  const stripeCheckoutMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/stripe/checkout-finish-battlepass", {
-        username,
-        priceId: "price_1SWNkADgYXG4LmQo4fIBYedA"
-      });
-      const data = await response.json();
-      return data;
-    },
-    onSuccess: (data) => {
-      if (data.sessionUrl) {
-        window.location.href = data.sessionUrl;
-      } else {
-        toast({ title: "Error", description: "Failed to create checkout session", variant: "destructive" });
-      }
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to start checkout", variant: "destructive" });
-    },
-  });
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background p-8">
@@ -126,21 +105,6 @@ export default function BattlePass() {
                 </span>
               </div>
               <Progress value={tierProgress} className="h-3" data-testid="progress-tier-xp" />
-            </div>
-            <div className="border-t pt-4">
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full"
-                data-testid="button-unlock-all-tiers"
-                onClick={() => stripeCheckoutMutation.mutate()}
-                disabled={stripeCheckoutMutation.isPending}
-              >
-                {stripeCheckoutMutation.isPending ? "Loading..." : "Unlock All Tiers ($1)"}
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                Cosmetics are purely cosmetic and provide no gameplay benefits. This is a way to support development!
-              </p>
             </div>
           </CardContent>
         </Card>
