@@ -219,6 +219,17 @@ function AppContent() {
     refetchInterval: 5000,
   });
 
+  const { data: userCosmeticsData } = useQuery({
+    queryKey: [`/api/users/${username}/cosmetics`],
+    enabled: !!username,
+    refetchInterval: 5000,
+  });
+
+  const { data: allCosmetics = [] } = useQuery({
+    queryKey: ["/api/cosmetics"],
+    enabled: !!username,
+  });
+
   useEffect(() => {
     if (!username) {
       setLocation("/auth");
@@ -236,6 +247,28 @@ function AppContent() {
       styleElement.textContent = `:root { ${activeTheme.cssOverrides} }`;
     }
   }, [activeTheme]);
+
+  // Apply user's equipped cosmetic
+  useEffect(() => {
+    const activeId = (userCosmeticsData as any)?.active?.activeCosmeticId;
+    if (activeId && allCosmetics.length > 0) {
+      const activeCosmetic = allCosmetics.find(c => c.id === activeId);
+      if (activeCosmetic && activeCosmetic.type === "theme" && activeCosmetic.value) {
+        let styleElement = document.getElementById("cosmetic-overrides");
+        if (!styleElement) {
+          styleElement = document.createElement("style");
+          styleElement.id = "cosmetic-overrides";
+          document.head.appendChild(styleElement);
+        }
+        // Parse theme value and apply as CSS variables
+        styleElement.textContent = `:root { --cosmetic-theme: '${activeCosmetic.value}'; } body { --active-cosmetic: '${activeCosmetic.value}'; }`;
+      }
+    } else {
+      // Remove cosmetic overrides if no active cosmetic
+      const element = document.getElementById("cosmetic-overrides");
+      if (element) element.remove();
+    }
+  }, [userCosmeticsData, allCosmetics]);
 
   if (!username) {
     return <Auth />;
