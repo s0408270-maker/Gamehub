@@ -592,7 +592,7 @@ export default function OwnerPanel() {
                       <div className="space-y-4">
                         <div>
                           <label className="text-sm font-semibold block mb-2">Free Cosmetic</label>
-                          <Select defaultValue={tier.freeCosmeticId || ""} onValueChange={(val) => {}}>
+                          <Select defaultValue={tier.freeCosmeticId || ""}>
                             <SelectTrigger>
                               <SelectValue placeholder="None" />
                             </SelectTrigger>
@@ -606,7 +606,7 @@ export default function OwnerPanel() {
                         </div>
                         <div>
                           <label className="text-sm font-semibold block mb-2">Premium Cosmetic</label>
-                          <Select defaultValue={tier.premiumCosmeticId || ""} onValueChange={(val) => {}}>
+                          <Select defaultValue={tier.premiumCosmeticId || ""}>
                             <SelectTrigger>
                               <SelectValue placeholder="None" />
                             </SelectTrigger>
@@ -620,7 +620,7 @@ export default function OwnerPanel() {
                         </div>
                         <div>
                           <label className="text-sm font-semibold block mb-2">Free Game</label>
-                          <Select defaultValue={tier.freeGameId || ""} onValueChange={(val) => {}}>
+                          <Select defaultValue={tier.freeGameId || ""}>
                             <SelectTrigger>
                               <SelectValue placeholder="None" />
                             </SelectTrigger>
@@ -634,7 +634,7 @@ export default function OwnerPanel() {
                         </div>
                         <div>
                           <label className="text-sm font-semibold block mb-2">Premium Game</label>
-                          <Select defaultValue={tier.premiumGameId || ""} onValueChange={(val) => {}}>
+                          <Select defaultValue={tier.premiumGameId || ""}>
                             <SelectTrigger>
                               <SelectValue placeholder="None" />
                             </SelectTrigger>
@@ -647,10 +647,10 @@ export default function OwnerPanel() {
                           </Select>
                         </div>
                         <Button onClick={() => {
-                          const freeC = (document.querySelector('div:nth-child(1) [role="combobox"]') as HTMLElement)?.textContent?.includes("None") ? undefined : tier.freeCosmeticId;
-                          const premC = (document.querySelector('div:nth-child(2) [role="combobox"]') as HTMLElement)?.textContent?.includes("None") ? undefined : tier.premiumCosmeticId;
-                          const freeG = (document.querySelector('div:nth-child(3) [role="combobox"]') as HTMLElement)?.textContent?.includes("None") ? undefined : tier.freeGameId;
-                          const premG = (document.querySelector('div:nth-child(4) [role="combobox"]') as HTMLElement)?.textContent?.includes("None") ? undefined : tier.premiumGameId;
+                          const freeC = tier.freeCosmeticId || undefined;
+                          const premC = tier.premiumCosmeticId || undefined;
+                          const freeG = tier.freeGameId || undefined;
+                          const premG = tier.premiumGameId || undefined;
                           updateTierMutation.mutate({ tierId: tier.id, freeCosmeticId: freeC, premiumCosmeticId: premC, freeGameId: freeG, premiumGameId: premG });
                         }} disabled={updateTierMutation.isPending} className="w-full" data-testid={`button-save-tier-${tier.tier}`}>Save Changes</Button>
                       </div>
