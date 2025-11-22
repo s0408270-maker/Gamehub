@@ -10,47 +10,61 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { AppTheme, Announcement } from "@shared/schema";
 import { Trash2, Plus, Send } from "lucide-react";
 
-const THEME_TEMPLATES = [
-  {
-    name: "Neon Cyberpunk",
-    cssOverrides: `--primary: 280 100% 50%;
---primary-foreground: 0 0% 100%;
---secondary: 180 100% 50%;
---secondary-foreground: 0 0% 0%;
---accent: 340 100% 50%;
---accent-foreground: 0 0% 100%;
---background: 250 30% 10%;
---foreground: 270 100% 95%;
---card: 250 30% 20%;
---border: 280 100% 50%;`,
-  },
-  {
-    name: "Ocean Blue",
-    cssOverrides: `--primary: 200 100% 50%;
---primary-foreground: 0 0% 100%;
---secondary: 160 100% 50%;
---secondary-foreground: 0 0% 0%;
---accent: 30 100% 50%;
---accent-foreground: 0 0% 0%;
---background: 210 25% 15%;
---foreground: 200 30% 95%;
---card: 210 25% 25%;
---border: 200 100% 50%;`,
-  },
-  {
-    name: "Forest Green",
-    cssOverrides: `--primary: 120 100% 50%;
---primary-foreground: 0 0% 100%;
---secondary: 160 100% 50%;
---secondary-foreground: 0 0% 100%;
---accent: 40 100% 50%;
---accent-foreground: 0 0% 0%;
---background: 140 30% 12%;
---foreground: 100 30% 95%;
---card: 140 30% 22%;
---border: 120 100% 50%;`,
-  },
-];
+function generateThemeFromDescription(description: string): string {
+  const desc = description.toLowerCase();
+  
+  // Detect theme characteristics
+  const isDark = desc.includes("dark") || desc.includes("black") || desc.includes("night");
+  const isLight = desc.includes("light") || desc.includes("white") || desc.includes("bright");
+  const hasNeon = desc.includes("neon") || desc.includes("vibrant") || desc.includes("bright") || desc.includes("electric");
+  
+  // Detect primary color from keywords
+  let primaryHue = 200; // default blue
+  if (desc.includes("red") || desc.includes("crimson") || desc.includes("ruby")) primaryHue = 0;
+  else if (desc.includes("orange") || desc.includes("amber")) primaryHue = 30;
+  else if (desc.includes("yellow") || desc.includes("gold")) primaryHue = 50;
+  else if (desc.includes("green") || desc.includes("forest") || desc.includes("lime")) primaryHue = 120;
+  else if (desc.includes("cyan") || desc.includes("turquoise") || desc.includes("aqua")) primaryHue = 180;
+  else if (desc.includes("blue") || desc.includes("ocean") || desc.includes("navy")) primaryHue = 200;
+  else if (desc.includes("purple") || desc.includes("violet") || desc.includes("indigo")) primaryHue = 270;
+  else if (desc.includes("pink") || desc.includes("magenta")) primaryHue = 320;
+  
+  // Detect secondary color (complementary or different)
+  let secondaryHue = (primaryHue + 120) % 360;
+  if (desc.includes("and") && desc.match(/and\s+(\w+)/)) {
+    const colorMatch = desc.match(/and\s+(red|orange|yellow|green|cyan|blue|purple|pink)/);
+    if (colorMatch) {
+      const colors: Record<string, number> = {
+        red: 0, orange: 30, yellow: 50, green: 120, cyan: 180, blue: 200, purple: 270, pink: 320,
+      };
+      secondaryHue = colors[colorMatch[1]] || secondaryHue;
+    }
+  }
+  
+  // Detect accent color
+  let accentHue = (primaryHue + 60) % 360;
+  
+  // Saturation
+  const saturation = hasNeon ? 100 : 80;
+  
+  // Lightness for background and text
+  const bgLightness = isDark ? 15 : isLight ? 95 : 20;
+  const cardLightness = isDark ? 25 : isLight ? 90 : 30;
+  const fgLightness = isDark ? 95 : isLight ? 10 : 90;
+  const accentSaturation = hasNeon ? 100 : 90;
+  const accentLightness = isDark ? 55 : 45;
+  
+  return `--primary: ${primaryHue} ${saturation}% 50%;
+--primary-foreground: ${isDark ? 0 : 200} ${isDark ? 0 : 30}% ${isDark ? 100 : 15}%;
+--secondary: ${secondaryHue} ${saturation}% 50%;
+--secondary-foreground: ${isDark ? 0 : 200} ${isDark ? 0 : 30}% ${isDark ? 100 : 15}%;
+--accent: ${accentHue} ${accentSaturation}% ${accentLightness}%;
+--accent-foreground: ${isDark ? 0 : 200} ${isDark ? 0 : 30}% ${isDark ? 100 : 15}%;
+--background: ${primaryHue} 30% ${bgLightness}%;
+--foreground: ${primaryHue} 30% ${fgLightness}%;
+--card: ${primaryHue} 30% ${cardLightness}%;
+--border: ${primaryHue} ${saturation}% 50%;`;
+}
 
 export default function AdminPanel() {
   const { toast } = useToast();
@@ -236,72 +250,43 @@ export default function AdminPanel() {
           </CardContent>
         </Card>
 
-        {/* Theme Templates */}
+        {/* Generate Theme from Description */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Theme Templates</CardTitle>
-            <CardDescription>Quick-add pre-made themes</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {THEME_TEMPLATES.map((template) => (
-              <div key={template.name} className="flex items-center justify-between p-3 border rounded-md">
-                <h3 className="font-semibold text-sm">{template.name}</h3>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    createThemeMutation.mutate({
-                      name: template.name,
-                      cssOverrides: template.cssOverrides,
-                      description: "",
-                    });
-                  }}
-                  disabled={createThemeMutation.isPending || themes.some(t => t.name === template.name)}
-                  data-testid={`button-add-template-${template.name.replace(/\s+/g, '-').toLowerCase()}`}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  {themes.some(t => t.name === template.name) ? "Added" : "Add"}
-                </Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Create Custom Theme */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Create Custom Theme</CardTitle>
-            <CardDescription>Manually define your theme colors</CardDescription>
+            <CardTitle>Generate Theme from Description</CardTitle>
+            <CardDescription>Describe your theme and it will auto-generate the colors</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <Input
-              placeholder="Theme name (e.g., My Custom Theme)"
+              placeholder="Theme name (e.g., Dark Purple)"
               value={customThemeName}
               onChange={(e) => setCustomThemeName(e.target.value)}
               data-testid="input-custom-theme-name"
             />
             <Textarea
-              placeholder="Paste CSS variables (one per line)&#10;Example:&#10;--primary: 280 100% 50%;&#10;--background: 240 25% 10%;&#10;--foreground: 0 0% 95%;"
+              placeholder="Describe your theme (e.g., dark blue with neon accents, bright and vibrant, forest green with gold accents)"
               value={customThemeCss}
               onChange={(e) => setCustomThemeCss(e.target.value)}
-              className="font-mono text-sm min-h-32"
-              data-testid="textarea-custom-theme-css"
+              className="min-h-24"
+              data-testid="textarea-theme-description"
             />
             <Button
               onClick={() => {
                 if (customThemeName && customThemeCss) {
+                  const generated = generateThemeFromDescription(customThemeCss);
                   createThemeMutation.mutate({
                     name: customThemeName,
-                    cssOverrides: customThemeCss,
-                    description: "",
+                    cssOverrides: generated,
+                    description: customThemeCss,
                   });
                 }
               }}
               disabled={!customThemeName || !customThemeCss || createThemeMutation.isPending}
               className="w-full"
-              data-testid="button-create-custom-theme"
+              data-testid="button-generate-theme"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Create Theme
+              {createThemeMutation.isPending ? "Generating..." : "Generate Theme"}
             </Button>
           </CardContent>
         </Card>
