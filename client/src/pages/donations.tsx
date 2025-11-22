@@ -30,17 +30,15 @@ export default function Donations() {
               Support us directly via CashApp. Every donation helps us maintain and improve GameHub for the community.
             </p>
             <a
-              href="https://cash.app/$YOURCASHTAG"
+              href="https://cash.app/$SamCitko"
               target="_blank"
               rel="noopener noreferrer"
+              data-testid="link-cashapp-donate"
             >
               <Button className="w-full sm:w-auto bg-green-600 hover:bg-green-700">
                 Donate via CashApp
               </Button>
             </a>
-            <p className="text-xs text-white/50 mt-3">
-              Replace $YOURCASHTAG with your actual CashApp tag
-            </p>
           </div>
         </div>
 
