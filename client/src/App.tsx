@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Gamepad2, Users, ChevronDown, LogOut, Trophy, Zap, Flame, Wrench, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UserSearchDialog } from "@/components/user-search-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,6 +89,8 @@ function Header() {
         </div>
         
         <div className="flex items-center gap-2 flex-shrink-0">
+          <UserSearchDialog />
+
           {isInGroup && username && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
