@@ -1,4 +1,4 @@
-import { type Game, type InsertGame, games, groups, groupMembers, groupGames, messages, users, type Group, type InsertGroup, type GroupGame, type InsertGroupGame, type Message, type InsertMessage, type User, type InsertUser, type GroupMember, cosmetics, userCosmetics, activeCosmeticsMap, type Cosmetic, type UserCosmetic, type ActiveCosmetic, gameDifficultyVotes, type GameDifficultyVote, type InsertGameDifficultyVote, cosmeticTrades, type CosmeticTrade, type InsertCosmeticTrade, battlePassTiers, userBattlePassProgress, type BattlePassTier, type InsertBattlePassTier, type UserBattlePassProgress, type InsertUserBattlePassProgress } from "@shared/schema";
+import { type Game, type InsertGame, games, groups, groupMembers, groupGames, messages, users, type Group, type InsertGroup, type GroupGame, type InsertGroupGame, type Message, type InsertMessage, type User, type InsertUser, type GroupMember, cosmetics, userCosmetics, activeCosmeticsMap, type Cosmetic, type UserCosmetic, type ActiveCosmetic, gameDifficultyVotes, type GameDifficultyVote, type InsertGameDifficultyVote, cosmeticTrades, type CosmeticTrade, type InsertCosmeticTrade, battlePassTiers, userBattlePassProgress, type BattlePassTier, type InsertBattlePassTier, type UserBattlePassProgress, type InsertUserBattlePassProgress, appThemes, type AppTheme, type InsertAppTheme } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -60,6 +60,14 @@ export interface IStorage {
   getUserBattlePassProgress(userId: string): Promise<UserBattlePassProgress>;
   addBattlePassExperience(userId: string, amount: number): Promise<UserBattlePassProgress>;
   purchagePremiumPass(userId: string): Promise<UserBattlePassProgress>;
+
+  // Admin features
+  setUserAdmin(username: string, isAdmin: boolean): Promise<User>;
+  getAllThemes(): Promise<AppTheme[]>;
+  getActiveTheme(): Promise<AppTheme | undefined>;
+  createTheme(theme: InsertAppTheme): Promise<AppTheme>;
+  setActiveTheme(themeId: string): Promise<void>;
+  deleteTheme(themeId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {

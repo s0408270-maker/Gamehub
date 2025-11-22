@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   coins: integer("coins").default(0).notNull(),
+  isAdmin: text("is_admin").default("false").notNull(), // 'true' or 'false'
 });
 
 // Public games
@@ -128,6 +129,16 @@ export const userBattlePassProgress = pgTable("user_battle_pass_progress", {
   hasPremiumPass: text("has_premium_pass").default("false").notNull(), // 'true' or 'false'
 });
 
+// Global app themes/settings
+export const appThemes = pgTable("app_themes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  cssOverrides: text("css_overrides").notNull(), // CSS string to override colors
+  description: text("description"),
+  isActive: text("is_active").default("false").notNull(), // 'true' or 'false'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Schema definitions
 export const insertGameSchema = createInsertSchema(games).omit({ id: true });
 export const insertGroupSchema = createInsertSchema(groups).omit({ id: true, createdAt: true });
@@ -141,6 +152,7 @@ export const insertGameDifficultyVoteSchema = createInsertSchema(gameDifficultyV
 export const insertCosmeticTradeSchema = createInsertSchema(cosmeticTrades).omit({ id: true, createdAt: true });
 export const insertBattlePassTierSchema = createInsertSchema(battlePassTiers).omit({ id: true });
 export const insertUserBattlePassProgressSchema = createInsertSchema(userBattlePassProgress).omit({ id: true });
+export const insertAppThemeSchema = createInsertSchema(appThemes).omit({ id: true, createdAt: true });
 
 // Types
 export type Game = typeof games.$inferSelect;
@@ -168,3 +180,5 @@ export type BattlePassTier = typeof battlePassTiers.$inferSelect;
 export type InsertBattlePassTier = z.infer<typeof insertBattlePassTierSchema>;
 export type UserBattlePassProgress = typeof userBattlePassProgress.$inferSelect;
 export type InsertUserBattlePassProgress = z.infer<typeof insertUserBattlePassProgressSchema>;
+export type AppTheme = typeof appThemes.$inferSelect;
+export type InsertAppTheme = z.infer<typeof insertAppThemeSchema>;
