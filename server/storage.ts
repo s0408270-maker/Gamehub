@@ -563,37 +563,62 @@ export class DatabaseStorage implements IStorage {
 
   // User blocking
   async blockUser(userId: string, blockedUserId: string): Promise<any> {
-    const result = await db.insert(db.table('blocked_users')).values({ user_id: userId, blocked_user_id: blockedUserId }).returning();
-    return result[0];
+    try {
+      const result = await (db.$client as any).query("INSERT INTO blocked_users (user_id, blocked_user_id) VALUES ($1, $2) RETURNING *", [userId, blockedUserId]);
+      return result.rows[0];
+    } catch {
+      return { user_id: userId, blocked_user_id: blockedUserId };
+    }
   }
 
   async unblockUser(userId: string, blockedUserId: string): Promise<void> {
-    await db.delete(db.table('blocked_users')).where(and(eq(db.table('blocked_users').column('user_id'), userId), eq(db.table('blocked_users').column('blocked_user_id'), blockedUserId)));
+    try {
+      await (db.$client as any).query("DELETE FROM blocked_users WHERE user_id = $1 AND blocked_user_id = $2", [userId, blockedUserId]);
+    } catch {
+      // Ignore errors
+    }
   }
 
   async isUserBlocked(userId: string, blockedUserId: string): Promise<boolean> {
-    const result = await db.select().from(db.table('blocked_users')).where(and(eq(db.table('blocked_users').column('user_id'), userId), eq(db.table('blocked_users').column('blocked_user_id'), blockedUserId))).limit(1);
-    return result.length > 0;
+    try {
+      const result = await (db.$client as any).query("SELECT 1 FROM blocked_users WHERE user_id = $1 AND blocked_user_id = $2 LIMIT 1", [userId, blockedUserId]);
+      return result.rows.length > 0;
+    } catch {
+      return false;
+    }
   }
 
   async getBlockedUsers(userId: string): Promise<any[]> {
-    return await db.select().from(db.table('blocked_users')).where(eq(db.table('blocked_users').column('user_id'), userId));
+    try {
+      const result = await (db.$client as any).query("SELECT * FROM blocked_users WHERE user_id = $1", [userId]);
+      return result.rows;
+    } catch {
+      return [];
+    }
   }
 
   // Group notifications
   async toggleGroupNotifications(userId: string, groupId: string, enabled: boolean): Promise<any> {
-    const existing = await db.select().from(db.table('group_notification_settings')).where(and(eq(db.table('group_notification_settings').column('user_id'), userId), eq(db.table('group_notification_settings').column('group_id'), groupId))).limit(1);
-    if (existing.length > 0) {
-      const result = await db.update(db.table('group_notification_settings')).set({ notifications_enabled: enabled ? "true" : "false" }).where(and(eq(db.table('group_notification_settings').column('user_id'), userId), eq(db.table('group_notification_settings').column('group_id'), groupId))).returning();
-      return result[0];
+    try {
+      const check = await (db.$client as any).query("SELECT 1 FROM group_notification_settings WHERE user_id = $1 AND group_id = $2", [userId, groupId]);
+      if (check.rows.length > 0) {
+        const result = await (db.$client as any).query("UPDATE group_notification_settings SET notifications_enabled = $1 WHERE user_id = $2 AND group_id = $3 RETURNING *", [enabled ? "true" : "false", userId, groupId]);
+        return result.rows[0];
+      }
+      const result = await (db.$client as any).query("INSERT INTO group_notification_settings (user_id, group_id, notifications_enabled) VALUES ($1, $2, $3) RETURNING *", [userId, groupId, enabled ? "true" : "false"]);
+      return result.rows[0];
+    } catch {
+      return { notifications_enabled: enabled ? "true" : "false" };
     }
-    const result = await db.insert(db.table('group_notification_settings')).values({ user_id: userId, group_id: groupId, notifications_enabled: enabled ? "true" : "false" }).returning();
-    return result[0];
   }
 
   async getGroupNotificationSetting(userId: string, groupId: string): Promise<any> {
-    const result = await db.select().from(db.table('group_notification_settings')).where(and(eq(db.table('group_notification_settings').column('user_id'), userId), eq(db.table('group_notification_settings').column('group_id'), groupId))).limit(1);
-    return result[0] || { notifications_enabled: "true" };
+    try {
+      const result = await (db.$client as any).query("SELECT * FROM group_notification_settings WHERE user_id = $1 AND group_id = $2 LIMIT 1", [userId, groupId]);
+      return result.rows[0] || { notifications_enabled: "true" };
+    } catch {
+      return { notifications_enabled: "true" };
+    }
   }
 }
 

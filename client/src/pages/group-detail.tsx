@@ -45,7 +45,7 @@ export default function GroupDetail() {
     if (messages.length > prevMessageCountRef.current && messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
       if (lastMessage?.user?.username !== username && prevMessageCountRef.current > 0) {
-        toast({ title: "New message", description: `${lastMessage?.user?.username}: ${lastMessage?.content?.substring(0, 50)}...` });
+        toast({ title: "New message", description: `${lastMessage?.user?.username || "Someone"}: ${(lastMessage?.content || "").substring(0, 50)}...` });
       }
     }
     prevMessageCountRef.current = messages.length;

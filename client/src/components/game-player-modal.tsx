@@ -186,19 +186,48 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-2 sm:mb-4 px-2 sm:px-4">
-          <h2 className="text-lg sm:text-2xl font-bold text-white truncate pr-2" data-testid="text-playing-game-title">
-            {game.title}
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/10 flex-shrink-0"
-            onClick={onClose}
-            data-testid="button-close-player"
-          >
-            <X className="w-5 sm:w-6 h-5 sm:h-6" />
-          </Button>
+        <div className="flex items-center justify-between mb-2 sm:mb-4 px-2 sm:px-4 gap-2">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg sm:text-2xl font-bold text-white truncate" data-testid="text-playing-game-title">
+              {game.title}
+            </h2>
+            {avgDifficulty > 0 && <p className="text-xs text-white/60">Avg difficulty: {avgDifficulty}/5</p>}
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-1">
+              <Select value={difficulty} onValueChange={setDifficulty}>
+                <SelectTrigger className="w-20 h-9 text-white bg-white/10 border-white/20" data-testid="select-difficulty">
+                  <SelectValue placeholder="Rate" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 - Easy</SelectItem>
+                  <SelectItem value="2">2</SelectItem>
+                  <SelectItem value="3">3 - Medium</SelectItem>
+                  <SelectItem value="4">4</SelectItem>
+                  <SelectItem value="5">5 - Hard</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/10 h-9 w-9"
+                onClick={handleDifficultySubmit}
+                disabled={!difficulty}
+                data-testid="button-submit-difficulty"
+              >
+                <Star className="w-4 h-4" />
+              </Button>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/10"
+              onClick={onClose}
+              data-testid="button-close-player"
+            >
+              <X className="w-5 sm:w-6 h-5 sm:h-6" />
+            </Button>
+          </div>
         </div>
 
         {/* Game Container */}
