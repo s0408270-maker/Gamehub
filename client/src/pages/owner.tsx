@@ -30,6 +30,10 @@ export default function OwnerPanel() {
   const [banSearchQuery, setBanSearchQuery] = useState("");
   const [battlePassSeason, setBattlePassSeason] = useState(1);
   const [selectedTierIndex, setSelectedTierIndex] = useState<number | null>(null);
+  const [freeGameFile, setFreeGameFile] = useState<File | null>(null);
+  const [freeGameTitle, setFreeGameTitle] = useState("");
+  const [premiumGameFile, setPremiumGameFile] = useState<File | null>(null);
+  const [premiumGameTitle, setPremiumGameTitle] = useState("");
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
@@ -620,40 +624,116 @@ export default function OwnerPanel() {
                         </div>
                         <div>
                           <label className="text-sm font-semibold block mb-2">Free Game</label>
-                          <Select defaultValue={tier.freeGameId || "none"}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="None" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              {allGames.filter(g => g.id && g.id.trim()).map(g => (
-                                <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="space-y-2">
+                            <Input
+                              placeholder="Game title (optional)"
+                              value={freeGameTitle}
+                              onChange={(e) => setFreeGameTitle(e.target.value)}
+                              className="text-sm"
+                              data-testid="input-free-game-title"
+                            />
+                            <div
+                              onClick={() => document.getElementById(`free-game-input-${tier.id}`)?.click()}
+                              className="w-full p-4 border-2 border-dashed border-border rounded-md cursor-pointer hover:bg-secondary/50 transition-colors text-center"
+                              data-testid="button-upload-free-game"
+                            >
+                              {freeGameFile ? (
+                                <p className="text-sm font-medium">{freeGameFile.name}</p>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">Click to upload HTML/SWF game file</p>
+                              )}
+                            </div>
+                            <input
+                              id={`free-game-input-${tier.id}`}
+                              type="file"
+                              accept=".html,.swf"
+                              style={{ display: 'none' }}
+                              onChange={(e) => setFreeGameFile(e.target.files?.[0] || null)}
+                              data-testid="input-free-game-file"
+                            />
+                          </div>
                         </div>
                         <div>
                           <label className="text-sm font-semibold block mb-2">Premium Game</label>
-                          <Select defaultValue={tier.premiumGameId || "none"}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="None" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              {allGames.filter(g => g.id && g.id.trim()).map(g => (
-                                <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="space-y-2">
+                            <Input
+                              placeholder="Game title (optional)"
+                              value={premiumGameTitle}
+                              onChange={(e) => setPremiumGameTitle(e.target.value)}
+                              className="text-sm"
+                              data-testid="input-premium-game-title"
+                            />
+                            <div
+                              onClick={() => document.getElementById(`premium-game-input-${tier.id}`)?.click()}
+                              className="w-full p-4 border-2 border-dashed border-border rounded-md cursor-pointer hover:bg-secondary/50 transition-colors text-center"
+                              data-testid="button-upload-premium-game"
+                            >
+                              {premiumGameFile ? (
+                                <p className="text-sm font-medium">{premiumGameFile.name}</p>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">Click to upload HTML/SWF game file</p>
+                              )}
+                            </div>
+                            <input
+                              id={`premium-game-input-${tier.id}`}
+                              type="file"
+                              accept=".html,.swf"
+                              style={{ display: 'none' }}
+                              onChange={(e) => setPremiumGameFile(e.target.files?.[0] || null)}
+                              data-testid="input-premium-game-file"
+                            />
+                          </div>
                         </div>
-                        <Button onClick={() => {
-                          const getVal = (sel: string | null | undefined) => sel && sel !== "none" ? sel : undefined;
+                        <Button onClick={async () => {
+                          let freeGameId = tier.freeGameId;
+                          let premiumGameId = tier.premiumGameId;
+
+                          // Upload free game if file was selected
+                          if (freeGameFile) {
+                            const formData = new FormData();
+                            formData.append("title", freeGameTitle || freeGameFile.name);
+                            formData.append("gameFile", freeGameFile);
+                            formData.append("username", username);
+                            try {
+                              const res = await fetch("/api/games", { method: "POST", body: formData });
+                              if (res.ok) {
+                                const game = await res.json();
+                                freeGameId = game.id;
+                                setFreeGameFile(null);
+                                setFreeGameTitle("");
+                              }
+                            } catch (e) {
+                              toast({ title: "Error", description: "Failed to upload free game", variant: "destructive" });
+                              return;
+                            }
+                          }
+
+                          // Upload premium game if file was selected
+                          if (premiumGameFile) {
+                            const formData = new FormData();
+                            formData.append("title", premiumGameTitle || premiumGameFile.name);
+                            formData.append("gameFile", premiumGameFile);
+                            formData.append("username", username);
+                            try {
+                              const res = await fetch("/api/games", { method: "POST", body: formData });
+                              if (res.ok) {
+                                const game = await res.json();
+                                premiumGameId = game.id;
+                                setPremiumGameFile(null);
+                                setPremiumGameTitle("");
+                              }
+                            } catch (e) {
+                              toast({ title: "Error", description: "Failed to upload premium game", variant: "destructive" });
+                              return;
+                            }
+                          }
+
                           updateTierMutation.mutate({ 
                             tierId: tier.id, 
-                            freeCosmeticId: getVal(tier.freeCosmeticId), 
-                            premiumCosmeticId: getVal(tier.premiumCosmeticId), 
-                            freeGameId: getVal(tier.freeGameId), 
-                            premiumGameId: getVal(tier.premiumGameId) 
+                            freeCosmeticId: tier.freeCosmeticId || undefined, 
+                            premiumCosmeticId: tier.premiumCosmeticId || undefined, 
+                            freeGameId: freeGameId || undefined, 
+                            premiumGameId: premiumGameId || undefined 
                           });
                         }} disabled={updateTierMutation.isPending} className="w-full" data-testid={`button-save-tier-${tier.tier}`}>Save Changes</Button>
                       </div>
