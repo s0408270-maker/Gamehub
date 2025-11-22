@@ -262,31 +262,6 @@ export default function AdminPanel() {
           </CardContent>
         </Card>
 
-        {/* Grant Admin Access */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Grant Admin Access</CardTitle>
-            <CardDescription>Give a user admin permissions</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Username to make admin"
-                value={targetUser}
-                onChange={(e) => setTargetUser(e.target.value)}
-                data-testid="input-target-user"
-              />
-              <Button
-                onClick={() => setAdminMutation.mutate()}
-                disabled={!targetUser || setAdminMutation.isPending}
-                data-testid="button-grant-admin"
-              >
-                Grant Admin
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Generate Site Theme from Description */}
         <Card className="mb-8">
           <CardHeader>

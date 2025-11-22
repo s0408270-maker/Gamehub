@@ -244,7 +244,13 @@ export default function GroupDetail() {
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground"
                       }`}>
-                        <p className="text-xs font-medium mb-1">{msg.user?.username || "Unknown"}</p>
+                        <button
+                          onClick={() => setLocation(`/profile/${msg.user?.username || "Unknown"}`)}
+                          className="text-xs font-medium mb-1 hover:underline text-left cursor-pointer"
+                          data-testid={`button-profile-${msg.user?.username}`}
+                        >
+                          {msg.user?.username || "Unknown"}
+                        </button>
                         <p className="text-sm">{msg.content}</p>
                         <p className="text-xs opacity-75 mt-1">
                           {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}

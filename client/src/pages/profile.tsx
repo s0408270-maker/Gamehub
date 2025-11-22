@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute } from "wouter";
-import { ArrowLeft, Mail, Coins } from "lucide-react";
+import { ArrowLeft, Mail, Coins, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -75,6 +75,22 @@ export default function Profile() {
     },
   });
 
+  const blockUserMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/users/block`, {
+        username: currentUsername,
+        blockUsername: username,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Blocked", description: `Blocked ${username}` });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/blocked"] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to block user", variant: "destructive" });
+    },
+  });
+
   const isOwnProfile = username === currentUsername;
 
   if (!user) {
@@ -104,11 +120,25 @@ export default function Profile() {
                   {user.coins || 0} coins
                 </p>
               </div>
-              {user.isBanned === "true" && (
-                <span className="px-3 py-1 bg-destructive text-destructive-foreground rounded-full text-sm font-medium">
-                  Banned
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {user.isBanned === "true" && (
+                  <span className="px-3 py-1 bg-destructive text-destructive-foreground rounded-full text-sm font-medium">
+                    Banned
+                  </span>
+                )}
+                {!isOwnProfile && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => blockUserMutation.mutate()}
+                    disabled={blockUserMutation.isPending}
+                    data-testid="button-block-user"
+                  >
+                    <Ban className="w-4 h-4 mr-2" />
+                    Block
+                  </Button>
+                )}
+              </div>
             </div>
           </CardHeader>
         </Card>
