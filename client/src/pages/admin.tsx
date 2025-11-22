@@ -41,6 +41,11 @@ export default function AdminPanel() {
     queryKey: ["/api/announcements/active"],
   });
 
+  const { data: currentUser } = useQuery({
+    queryKey: [`/api/users/${username}`],
+    enabled: !!username,
+  });
+
   const createThemeMutation = useMutation({
     mutationFn: async (preset: { name: string; cssOverrides: string; description: string }) => {
       return await apiRequest("POST", "/api/admin/themes", {

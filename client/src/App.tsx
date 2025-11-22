@@ -187,7 +187,7 @@ function Header() {
                 <Gamepad2 className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Premium</span>
               </TabsTrigger>
-              {currentUser?.isAdmin === "true" && (
+              {(currentUser?.isAdmin === "true" || currentUser?.role === "admin" || currentUser?.role === "owner") && (
                 <TabsTrigger value="admin" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-admin">
                   <Wrench className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">Admin</span>
