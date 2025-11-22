@@ -8,9 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { AppTheme, Announcement, User } from "@shared/schema";
-import { Trash2, Plus, Send, ShoppingCart, Upload, Ban } from "lucide-react";
+import { Trash2, Plus, Send, ShoppingCart, Upload, Ban, Search } from "lucide-react";
 import { generateThemeFromDescription } from "@/lib/theme-generator";
 import { UploadGameForm } from "@/components/upload-game-form";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function OwnerPanel() {
   const { toast } = useToast();
@@ -24,6 +25,8 @@ export default function OwnerPanel() {
   const [cosmeticThemePrice, setCosmeticThemePrice] = useState(100);
   const [premiumGamePrice, setPremiumGamePrice] = useState(50);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [isBanModalOpen, setIsBanModalOpen] = useState(false);
+  const [banSearchQuery, setBanSearchQuery] = useState("");
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
@@ -410,57 +413,91 @@ export default function OwnerPanel() {
         </Card>
 
         {/* Ban Users */}
-        <Card className="mb-8 border-destructive/50 bg-destructive/5">
-          <CardHeader>
-            <CardTitle>Ban Users</CardTitle>
-            <CardDescription>Block users from accessing the website</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {allUsers.filter(u => u.username !== username).length === 0 ? (
-                <p className="text-muted-foreground">No other users found</p>
-              ) : (
-                allUsers
-                  .filter(u => u.username !== username)
-                  .map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center justify-between p-3 border rounded-md"
-                      data-testid={`user-item-${user.id}`}
-                    >
-                      <div>
-                        <h3 className="font-semibold">{user.username}</h3>
-                        <p className="text-xs text-muted-foreground">
-                          {user.isBanned === "true" ? "BANNED" : "Active"}
-                        </p>
-                      </div>
-                      {user.isBanned === "true" ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => unbanUserMutation.mutate(user.username)}
-                          disabled={unbanUserMutation.isPending}
-                          data-testid={`button-unban-${user.id}`}
-                        >
-                          Unban
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => banUserMutation.mutate(user.username)}
-                          disabled={banUserMutation.isPending}
-                          data-testid={`button-ban-${user.id}`}
-                        >
-                          <Ban className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))
-              )}
+        <Dialog open={isBanModalOpen} onOpenChange={setIsBanModalOpen}>
+          <Card className="mb-8 border-destructive/50 bg-destructive/5">
+            <CardHeader>
+              <CardTitle>Ban Users</CardTitle>
+              <CardDescription>Block users from accessing the website</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DialogTrigger asChild>
+                <Button variant="destructive" data-testid="button-open-ban-modal">
+                  <Ban className="w-4 h-4 mr-2" />
+                  Manage Bans
+                </Button>
+              </DialogTrigger>
+            </CardContent>
+          </Card>
+
+          <DialogContent className="max-w-md max-h-96 flex flex-col">
+            <DialogHeader>
+              <DialogTitle>Ban Users</DialogTitle>
+            </DialogHeader>
+            
+            <div className="flex items-center gap-2 px-1">
+              <Search className="w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search users..."
+                value={banSearchQuery}
+                onChange={(e) => setBanSearchQuery(e.target.value)}
+                className="flex-1"
+                data-testid="input-ban-search"
+              />
             </div>
-          </CardContent>
-        </Card>
+
+            <ScrollArea className="flex-1">
+              <div className="space-y-2 pr-4">
+                {allUsers
+                  .filter(u => u.username !== username)
+                  .filter(u => u.username.toLowerCase().includes(banSearchQuery.toLowerCase()))
+                  .length === 0 ? (
+                  <p className="text-sm text-muted-foreground p-4">No users found</p>
+                ) : (
+                  allUsers
+                    .filter(u => u.username !== username)
+                    .filter(u => u.username.toLowerCase().includes(banSearchQuery.toLowerCase()))
+                    .map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex items-center justify-between p-2 hover-elevate rounded-md"
+                        data-testid={`user-item-${user.id}`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-medium truncate">{user.username}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {user.isBanned === "true" ? "BANNED" : "Active"}
+                          </p>
+                        </div>
+                        {user.isBanned === "true" ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => unbanUserMutation.mutate(user.username)}
+                            disabled={unbanUserMutation.isPending}
+                            data-testid={`button-unban-${user.id}`}
+                            className="ml-2"
+                          >
+                            Unban
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => banUserMutation.mutate(user.username)}
+                            disabled={banUserMutation.isPending}
+                            data-testid={`button-ban-${user.id}`}
+                            className="ml-2"
+                          >
+                            Ban
+                          </Button>
+                        )}
+                      </div>
+                    ))
+                )}
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
 
         {/* Active Theme & List */}
         <Card>
