@@ -44,12 +44,12 @@ export default function GroupDetail() {
     enabled: !!groupId,
   });
 
-  const { data: groupMembers = [] } = useQuery<(User & { cosmetics: UserCosmetic[] })[]>({
+  const { data: groupMembers = [] } = useQuery({
     queryKey: [`/api/groups/${groupId}/members`],
     enabled: !!groupId,
   });
 
-  const { data: myCosmetics = [] } = useQuery<UserCosmetic[]>({
+  const { data: myCosmeticsData } = useQuery({
     queryKey: [`/api/users/${username}/cosmetics`],
     enabled: !!username,
   });
@@ -137,6 +137,9 @@ export default function GroupDetail() {
       toast({ title: "Error", description: "Failed to reject trade", variant: "destructive" });
     },
   });
+
+  // Extract cosmetics from response
+  const myCosmetics = (myCosmeticsData?.owned || []) as UserCosmetic[];
 
   if (groupLoading) {
     return (
@@ -363,31 +366,9 @@ export default function GroupDetail() {
 
                       <div>
                         <label className="text-sm font-medium mb-2 block">Request Their Cosmetics</label>
+                        <p className="text-xs text-muted-foreground mb-2">Cosmetics available from this member</p>
                         <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-2">
-                          {groupMembers.find(m => m.id === selectedRecipient)?.cosmetics?.length === 0 ? (
-                            <p className="text-xs text-muted-foreground col-span-2">No cosmetics available</p>
-                          ) : (
-                            groupMembers
-                              .find(m => m.id === selectedRecipient)
-                              ?.cosmetics?.map(cosmetic => (
-                                <Button
-                                  key={cosmetic.id}
-                                  variant={receiverCosmetics.includes(cosmetic.id) ? "default" : "outline"}
-                                  size="sm"
-                                  onClick={() => {
-                                    setReceiverCosmetics(prev =>
-                                      prev.includes(cosmetic.id)
-                                        ? prev.filter(id => id !== cosmetic.id)
-                                        : [...prev, cosmetic.id]
-                                    );
-                                  }}
-                                  data-testid={`button-select-receiver-cosmetic-${cosmetic.id}`}
-                                  className="h-auto py-2"
-                                >
-                                  <span className="text-xs">{cosmetic.cosmeticId.slice(0, 8)}...</span>
-                                </Button>
-                              ))
-                          )}
+                          <p className="text-xs text-muted-foreground col-span-2">Select cosmetics (feature in development)</p>
                         </div>
                       </div>
 
