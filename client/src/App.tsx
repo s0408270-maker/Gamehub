@@ -134,9 +134,13 @@ function Header() {
           )}
           
           {username && (
-            <div className="text-xs sm:text-sm text-muted-foreground px-2 py-1 bg-secondary rounded-md">
+            <button
+              onClick={() => setLocation(`/profile/${username}`)}
+              className="text-xs sm:text-sm text-muted-foreground px-2 py-1 bg-secondary rounded-md hover:bg-secondary/80 transition-colors cursor-pointer"
+              data-testid="button-view-own-profile"
+            >
               {username}
-            </div>
+            </button>
           )}
 
           {username && (

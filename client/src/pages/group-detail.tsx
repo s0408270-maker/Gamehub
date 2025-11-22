@@ -315,11 +315,13 @@ export default function GroupDetail() {
                   {games.map((game) => (
                     <Card key={game.id} className="hover-elevate" data-testid={`card-game-${game.id}`}>
                       <CardContent className="p-3">
-                        <img
-                          src={game.thumbnail}
-                          alt={game.title}
-                          className="w-full aspect-video object-cover rounded-md mb-2"
-                        />
+                        {game.thumbnail && (
+                          <img
+                            src={game.thumbnail}
+                            alt={game.title}
+                            className="w-full aspect-video object-cover rounded-md mb-2"
+                          />
+                        )}
                         <p className="text-sm font-medium line-clamp-2" data-testid={`text-game-title-${game.id}`}>
                           {game.title}
                         </p>
