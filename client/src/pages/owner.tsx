@@ -46,21 +46,6 @@ export default function OwnerPanel() {
     enabled: !!username,
   });
 
-  // Check if user is owner
-  const isOwner = currentUser?.role === "owner";
-
-  if (!isOwner) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <Card>
-          <CardContent className="pt-6 text-center text-muted-foreground">
-            You don't have permission to access the owner panel.
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   const createThemeMutation = useMutation({
     mutationFn: async (preset: { name: string; cssOverrides: string; description: string }) => {
       return await apiRequest("POST", "/api/admin/themes", {
@@ -181,6 +166,21 @@ export default function OwnerPanel() {
       toast({ title: "Error", description: "Failed to send announcement", variant: "destructive" });
     },
   });
+
+  // Check if user is owner
+  const isOwner = currentUser?.role === "owner";
+
+  if (!isOwner) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        <Card>
+          <CardContent className="pt-6 text-center text-muted-foreground">
+            You don't have permission to access the owner panel.
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pt-12">
