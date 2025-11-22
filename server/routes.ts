@@ -89,10 +89,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const passwordHash = hashPassword(password);
       const user = await storage.createUser(username, passwordHash);
-      res.status(201).json({ id: user.id, username: user.username });
+      return res.status(201).json({ id: user.id, username: user.username });
     } catch (error) {
       console.error("Error registering user:", error);
-      res.status(400).json({ message: "Failed to register" });
+      if (!res.headersSent) {
+        return res.status(500).json({ message: "Registration failed. Please try again." });
+      }
     }
   });
 
@@ -100,12 +102,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
+      
       if (!username || !password) {
         return res.status(400).json({ message: "Username and password required" });
       }
 
       const passwordHash = hashPassword(password);
       const user = await storage.authenticateUser(username, passwordHash);
+      
       if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
@@ -114,10 +118,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You have been banned from this website" });
       }
 
-      res.json({ id: user.id, username: user.username });
+      return res.status(200).json({ id: user.id, username: user.username });
     } catch (error) {
       console.error("Error logging in:", error);
-      res.status(400).json({ message: "Failed to login" });
+      if (!res.headersSent) {
+        return res.status(500).json({ message: "Login failed. Please try again." });
+      }
     }
   });
 
