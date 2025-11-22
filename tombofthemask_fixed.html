@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tomb of the Mask</title>
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+}
+iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+}
+.error-message {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+.error-message h2 {
+    margin: 0;
+    font-size: 24px;
+}
+.error-message p {
+    margin: 0;
+    font-size: 14px;
+    color: #aaa;
+}
+#game-container {
+    width: 100%;
+    height: 100%;
+}
+.retry-btn {
+    padding: 10px 20px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+.retry-btn:hover {
+    background: #45a049;
+}
+</style>
+</head>
+<body>
+<div id="game-container">
+    <div class="error-message" id="loading">
+        <h2>Loading game...</h2>
+        <p>Please wait...</p>
+    </div>
+</div>
+
+<script>
+// Try multiple sources
+const gameUrls = [
+    'https://truffled.lol/games/tombofthemask/index.html',
+    'https://tombofthemask.io',
+];
+
+let currentAttempt = 0;
+
+function loadGame(url) {
+    const container = document.getElementById('game-container');
+    container.innerHTML = '';
+    
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.style.display = 'block';
+    
+    let loadTimeout;
+    let loaded = false;
+    
+    const onLoad = () => {
+        loaded = true;
+        clearTimeout(loadTimeout);
+    };
+    
+    const onError = () => {
+        clearTimeout(loadTimeout);
+        if (!loaded) {
+            tryNextSource();
+        }
+    };
+    
+    loadTimeout = setTimeout(() => {
+        if (!loaded) {
+            onError();
+        }
+    }, 5000);
+    
+    iframe.addEventListener('load', onLoad);
+    iframe.addEventListener('error', onError);
+    
+    container.appendChild(iframe);
+}
+
+function tryNextSource() {
+    const container = document.getElementById('game-container');
+    
+    if (currentAttempt < gameUrls.length - 1) {
+        currentAttempt++;
+        console.log('Trying next source:', gameUrls[currentAttempt]);
+        loadGame(gameUrls[currentAttempt]);
+    } else {
+        // All sources failed
+        container.innerHTML = `
+            <div class="error-message">
+                <h2>⚠️ Game Failed to Load</h2>
+                <p>Unable to load "Tomb of the Mask" game.</p>
+                <p style="font-size: 12px; margin-top: 10px;">The game server may be temporarily unavailable.</p>
+                <button class="retry-btn" onclick="location.reload()">Retry</button>
+            </div>
+        `;
+    }
+}
+
+// Start loading
+window.addEventListener('DOMContentLoaded', () => {
+    loadGame(gameUrls[currentAttempt]);
+});
+</script>
+</body>
+</html>
