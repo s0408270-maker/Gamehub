@@ -113,6 +113,39 @@ export default function AdminPanel() {
     },
   });
 
+  const christmasThemeCss = `
+    --primary: 0 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 200 100% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 45 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --background: 200 20% 15%;
+    --foreground: 0 0% 95%;
+    --card: 200 15% 25%;
+    --border: 0 100% 50%;
+  `;
+
+  const applyChristmasThemeMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/admin/themes", {
+        username,
+        name: "Christmas Frozen",
+        cssOverrides: christmasThemeCss,
+        description: "Festive Christmas theme with icy frozen effects and twinkling lights",
+      });
+    },
+    onSuccess: (theme) => {
+      toast({ title: "Christmas theme created!", description: "Activating festive theme..." });
+      setTimeout(() => {
+        activateThemeMutation.mutate(theme.id);
+      }, 500);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create Christmas theme", variant: "destructive" });
+    },
+  });
+
   return (
     <div className="min-h-screen bg-background pt-12">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
@@ -146,6 +179,27 @@ export default function AdminPanel() {
               <Send className="w-4 h-4 mr-2" />
               Send Announcement
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Quick Themes */}
+        <Card className="mb-8 bg-gradient-to-r from-red-500/10 to-blue-500/10 border-red-500/50">
+          <CardHeader>
+            <CardTitle>Quick Holiday Themes</CardTitle>
+            <CardDescription>Apply pre-made festive themes instantly</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              onClick={() => applyChristmasThemeMutation.mutate()}
+              disabled={applyChristmasThemeMutation.isPending}
+              className="w-full bg-red-600 hover:bg-red-700 text-white"
+              data-testid="button-apply-christmas-theme"
+            >
+              {applyChristmasThemeMutation.isPending ? "Creating Christmas Theme..." : "✨ Apply Christmas Frozen Theme"}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Activate a festive Christmas theme with icy blues and warm holiday colors. Perfect for the season!
+            </p>
           </CardContent>
         </Card>
 
