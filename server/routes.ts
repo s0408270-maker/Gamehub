@@ -1345,6 +1345,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // STRIPE CHECKOUT - Finish Battle Pass
+  app.post("/api/stripe/checkout-finish-battlepass", async (req: any, res) => {
+    try {
+      const username = req.body.username || "guest";
+      // In production, this would create a Stripe checkout session
+      // For now, return a placeholder response
+      return res.status(200).json({ 
+        message: "Stripe checkout initialized",
+        success: true
+      });
+    } catch (error) {
+      console.error("Stripe checkout error:", error);
+      res.status(500).json({ message: "Checkout failed" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

@@ -106,6 +106,19 @@ export default function BattlePass() {
               </div>
               <Progress value={tierProgress} className="h-3" data-testid="progress-tier-xp" />
             </div>
+            <div className="border-t pt-4">
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full"
+                data-testid="button-unlock-all-tiers"
+              >
+                Unlock All Tiers ($1)
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                Cosmetics are purely cosmetic and provide no gameplay benefits. This is a way to support development!
+              </p>
+            </div>
           </CardContent>
         </Card>
 
