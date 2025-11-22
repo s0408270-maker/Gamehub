@@ -14,6 +14,7 @@ interface GamePlayerModalProps {
 
 export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
   const [loading, setLoading] = useState(true);
+  const [gameUrl, setGameUrl] = useState<string>(`/api/play/${game.id}`);
   const gameType = (game as any).gameType || "html";
   const username = localStorage.getItem("username") || "";
 
@@ -63,6 +64,40 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
     script.async = true;
     document.body.appendChild(script);
   }, [open, gameType]);
+
+  // Check if game HTML contains an external iframe and load it directly
+  useEffect(() => {
+    if (!open || gameType !== "html") {
+      setLoading(false);
+      return;
+    }
+
+    const detectExternalIframe = async () => {
+      try {
+        const response = await fetch(`/api/play/${game.id}`);
+        const html = await response.text();
+        
+        // Parse HTML to find iframe src
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        const iframe = doc.querySelector("iframe");
+        
+        if (iframe && iframe.src) {
+          const src = iframe.src;
+          // Check if it's an external URL
+          if (src.startsWith("http://") || src.startsWith("https://")) {
+            setGameUrl(src);
+          }
+        }
+      } catch (err) {
+        console.error("Error parsing game HTML:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    detectExternalIframe();
+  }, [open, game.id, gameType]);
 
   const handleIframeLoad = () => {
     setLoading(false);
@@ -114,10 +149,10 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
             />
           ) : (
             <iframe
-              src={`/api/play/${game.id}`}
+              src={gameUrl}
               className="w-full h-full border-0"
               title={game.title}
-              sandbox="allow-scripts allow-forms allow-pointer-lock allow-same-origin allow-top-navigation allow-popups allow-presentation"
+              sandbox="allow-scripts allow-forms allow-pointer-lock allow-same-origin allow-top-navigation allow-popups allow-presentation allow-popups-to-escape-sandbox"
               referrerPolicy="no-referrer"
               allowFullScreen
               onLoad={handleIframeLoad}
