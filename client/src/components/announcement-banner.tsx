@@ -33,7 +33,7 @@ export function AnnouncementBanner() {
   return (
     <div 
       onClick={handleDismiss}
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-50 cursor-pointer text-foreground text-sm sm:text-base font-semibold hover:opacity-70 transition-opacity"
+      className="fixed top-4 left-1/2 -translate-x-1/2 z-50 cursor-pointer text-foreground text-lg sm:text-xl font-semibold hover:opacity-70 transition-opacity"
       data-testid="banner-announcement"
     >
       {announcement.message}
