@@ -199,7 +199,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                   accept=".html,.swf,text/html,text/plain,application/x-shockwave-flash"
                   id="game-file-input"
                   data-testid="input-game-file"
-                  style={{ position: 'absolute', opacity: 0, width: 0, height: 0, pointerEvents: 'auto' }}
+                  className="sr-only"
                   onChange={(e) => {
                     const file = (e.target as HTMLInputElement).files?.[0];
                     if (file) {
@@ -254,7 +254,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
               accept="image/*"
               id="thumbnail-input"
               data-testid="input-thumbnail"
-              style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+              className="sr-only"
               onChange={(e) => {
                 const file = (e.target as HTMLInputElement).files?.[0];
                 if (file) {
