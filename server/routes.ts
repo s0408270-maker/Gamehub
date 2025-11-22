@@ -195,7 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (cached) {
         return res.json(cached);
       }
-      const games = await storage.getAllGames();
+      const games = await storage.getAllGamesWithCreator();
       cache.set("games:all", games);
       res.json(games);
     } catch (error) {
@@ -207,7 +207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/games/:id - Get a specific game
   app.get("/api/games/:id", async (req, res) => {
     try {
-      const game = await storage.getGame(req.params.id);
+      const game = await storage.getGameWithCreator(req.params.id);
       if (!game) {
         return res.status(404).json({ message: "Game not found" });
       }
@@ -1266,7 +1266,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // DELETE GROUP (creator only)
+  // DELETE GROUP (owner can delete any, creators can delete only their own)
   app.delete("/api/groups/:groupId", async (req, res) => {
     try {
       const username = req.query.username as string;
@@ -1280,8 +1280,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Not found" });
       }
 
-      if (group.createdBy !== user.id) {
-        return res.status(403).json({ message: "Only creator can delete group" });
+      // Owner can delete any group, creators can only delete their own
+      const isOwner = user.role === "owner";
+      const isCreator = group.createdBy === user.id;
+
+      if (!isOwner && !isCreator) {
+        return res.status(403).json({ message: "You don't have permission to delete this group" });
       }
 
       await storage.deleteGroup(req.params.groupId);
