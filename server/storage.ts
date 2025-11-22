@@ -65,6 +65,7 @@ export interface IStorage {
   setUserAdmin(username: string, isAdmin: boolean): Promise<User>;
   getAllThemes(): Promise<AppTheme[]>;
   getActiveTheme(): Promise<AppTheme | undefined>;
+  getActiveThemeByPage(pageRoute: string): Promise<AppTheme | undefined>;
   createTheme(theme: InsertAppTheme): Promise<AppTheme>;
   setActiveTheme(themeId: string): Promise<void>;
   deleteTheme(themeId: string): Promise<void>;
@@ -411,6 +412,13 @@ export class DatabaseStorage implements IStorage {
   async getActiveTheme(): Promise<AppTheme | undefined> {
     const result = await db.select().from(appThemes)
       .where(eq(appThemes.isActive, "true"))
+      .limit(1);
+    return result[0];
+  }
+
+  async getActiveThemeByPage(pageRoute: string): Promise<AppTheme | undefined> {
+    const result = await db.select().from(appThemes)
+      .where(and(eq(appThemes.isActive, "true"), eq(appThemes.pageRoute, pageRoute)))
       .limit(1);
     return result[0];
   }

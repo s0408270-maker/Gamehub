@@ -811,7 +811,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/themes/active", async (req, res) => {
     try {
-      const theme = await storage.getActiveTheme();
+      const pageRoute = req.query.page as string || "/";
+      const theme = await storage.getActiveThemeByPage(pageRoute);
       res.json(theme || null);
     } catch (error) {
       console.error("Error fetching active theme:", error);

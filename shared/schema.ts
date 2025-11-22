@@ -135,6 +135,7 @@ export const appThemes = pgTable("app_themes", {
   name: text("name").notNull(),
   cssOverrides: text("css_overrides").notNull(), // CSS string to override colors
   description: text("description"),
+  pageRoute: text("page_route").default("/").notNull(), // Page route (e.g., "/", "/admin", "/shop")
   isActive: text("is_active").default("false").notNull(), // 'true' or 'false'
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

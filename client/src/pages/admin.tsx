@@ -104,7 +104,6 @@ export default function AdminPanel() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
       setCustomThemeName("");
       setCustomThemeCss("");
-      setCustomThemeDesc("");
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to add theme", variant: "destructive" });
