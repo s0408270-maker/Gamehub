@@ -63,10 +63,26 @@ export default function AdminPanel() {
     onSuccess: () => {
       toast({ title: "Theme activated!", description: "Site will reload with new theme." });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/themes/active"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
       setTimeout(() => window.location.reload(), 500);
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to activate theme", variant: "destructive" });
+    },
+  });
+
+  const disableAllThemesMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/admin/themes/disable-all", { username });
+    },
+    onSuccess: () => {
+      toast({ title: "Themes disabled!", description: "Site returned to default colors." });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/themes/active"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
+      setTimeout(() => window.location.reload(), 500);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to disable themes", variant: "destructive" });
     },
   });
 
@@ -304,8 +320,8 @@ export default function AdminPanel() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => activateThemeMutation.mutate("")}
-                          disabled={activateThemeMutation.isPending}
+                          onClick={() => disableAllThemesMutation.mutate()}
+                          disabled={disableAllThemesMutation.isPending}
                           data-testid={`button-disable-theme-${theme.id}`}
                         >
                           Disable
