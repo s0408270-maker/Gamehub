@@ -116,6 +116,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
   });
 
   const onSubmit = (data: TitleFormData) => {
+    console.log("onSubmit called with:", { uploadMode, gameFile: gameFile?.name, thumbnailFile: thumbnailFile?.name, htmlCode: htmlCode.length });
     const errors: { game?: string; thumbnail?: string } = {};
     
     if (uploadMode === "code") {
@@ -125,22 +126,28 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
     } else {
       if (!gameFile) {
         errors.game = "Game file is required";
+        console.log("No game file selected");
       } else if (!gameFile.name.endsWith(".html") && !gameFile.name.endsWith(".swf")) {
         errors.game = "File must be HTML or SWF";
+        console.log("Invalid game file type:", gameFile.name);
       }
     }
     
     if (!thumbnailFile) {
       errors.thumbnail = "Thumbnail is required";
+      console.log("No thumbnail file selected");
     } else if (!thumbnailFile.type.startsWith("image/")) {
       errors.thumbnail = "File must be an image";
+      console.log("Invalid thumbnail type:", thumbnailFile.type);
     }
     
     if (Object.keys(errors).length > 0) {
+      console.log("Validation errors:", errors);
       setFileErrors(errors);
       return;
     }
 
+    console.log("Validation passed, submitting...");
     setFileErrors({});
     uploadMutation.mutate(data);
   };
@@ -202,6 +209,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                   style={{ position: 'absolute', left: '-9999px', visibility: 'hidden' }}
                   onChange={(e) => {
                     const file = (e.target as HTMLInputElement).files?.[0];
+                    console.log("Game file selected:", file?.name, file?.type);
                     if (file) {
                       setGameFile(file);
                       setGameFileName(file.name);
@@ -257,6 +265,7 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
               style={{ position: 'absolute', left: '-9999px', visibility: 'hidden' }}
               onChange={(e) => {
                 const file = (e.target as HTMLInputElement).files?.[0];
+                console.log("Thumbnail file selected:", file?.name, file?.type);
                 if (file) {
                   setThumbnailFile(file);
                   setThumbnailFileName(file.name);
