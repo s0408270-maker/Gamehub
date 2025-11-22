@@ -88,6 +88,46 @@ export const activeCosmeticsMap = pgTable("active_cosmetics", {
   activeCosmeticId: varchar("active_cosmetic_id"),
 });
 
+// Game difficulty votes - community votes on game difficulty
+export const gameDifficultyVotes = pgTable("game_difficulty_votes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  gameId: varchar("game_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  difficulty: integer("difficulty").notNull(), // 1-5 scale
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Cosmetic trades between users in the same group
+export const cosmeticTrades = pgTable("cosmetic_trades", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  groupId: varchar("group_id").notNull(),
+  senderId: varchar("sender_id").notNull(),
+  receiverId: varchar("receiver_id").notNull(),
+  senderCosmeticIds: text("sender_cosmetic_ids").notNull(), // JSON array
+  receiverCosmeticIds: text("receiver_cosmetic_ids").notNull(), // JSON array
+  status: text("status").default("pending").notNull(), // 'pending', 'accepted', 'rejected'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Battle pass system - free and premium tiers
+export const battlePassTiers = pgTable("battle_pass_tiers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  season: integer("season").notNull(), // Season number
+  tier: integer("tier").notNull(), // 1-50 tiers
+  freeCosmeticId: varchar("free_cosmetic_id"), // Free reward
+  premiumCosmeticId: varchar("premium_cosmetic_id"), // Premium reward
+});
+
+// User battle pass progress
+export const userBattlePassProgress = pgTable("user_battle_pass_progress", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().unique(),
+  currentSeason: integer("current_season").default(1).notNull(),
+  currentTier: integer("current_tier").default(0).notNull(),
+  experience: integer("experience").default(0).notNull(),
+  hasPremiumPass: text("has_premium_pass").default("false").notNull(), // 'true' or 'false'
+});
+
 // Schema definitions
 export const insertGameSchema = createInsertSchema(games).omit({ id: true });
 export const insertGroupSchema = createInsertSchema(groups).omit({ id: true, createdAt: true });
@@ -97,6 +137,10 @@ export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertCosmeticSchema = createInsertSchema(cosmetics).omit({ id: true });
 export const insertUserCosmeticSchema = createInsertSchema(userCosmetics).omit({ id: true, purchasedAt: true });
 export const insertActiveCosmeticSchema = createInsertSchema(activeCosmeticsMap).omit({ id: true });
+export const insertGameDifficultyVoteSchema = createInsertSchema(gameDifficultyVotes).omit({ id: true, createdAt: true });
+export const insertCosmeticTradeSchema = createInsertSchema(cosmeticTrades).omit({ id: true, createdAt: true });
+export const insertBattlePassTierSchema = createInsertSchema(battlePassTiers).omit({ id: true });
+export const insertUserBattlePassProgressSchema = createInsertSchema(userBattlePassProgress).omit({ id: true });
 
 // Types
 export type Game = typeof games.$inferSelect;
@@ -116,3 +160,11 @@ export type UserCosmetic = typeof userCosmetics.$inferSelect;
 export type InsertUserCosmetic = z.infer<typeof insertUserCosmeticSchema>;
 export type ActiveCosmetic = typeof activeCosmeticsMap.$inferSelect;
 export type InsertActiveCosmetic = z.infer<typeof insertActiveCosmeticSchema>;
+export type GameDifficultyVote = typeof gameDifficultyVotes.$inferSelect;
+export type InsertGameDifficultyVote = z.infer<typeof insertGameDifficultyVoteSchema>;
+export type CosmeticTrade = typeof cosmeticTrades.$inferSelect;
+export type InsertCosmeticTrade = z.infer<typeof insertCosmeticTradeSchema>;
+export type BattlePassTier = typeof battlePassTiers.$inferSelect;
+export type InsertBattlePassTier = z.infer<typeof insertBattlePassTierSchema>;
+export type UserBattlePassProgress = typeof userBattlePassProgress.$inferSelect;
+export type InsertUserBattlePassProgress = z.infer<typeof insertUserBattlePassProgressSchema>;
