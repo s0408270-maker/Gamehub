@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -34,6 +34,9 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
   const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
   const [fileErrors, setFileErrors] = useState<{ game?: string; thumbnail?: string }>({});
   const { toast } = useToast();
+
+  const gameFileInputRef = useRef<HTMLInputElement>(null);
+  const thumbnailFileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<TitleFormData>({
     resolver: zodResolver(uploadSchema),
@@ -104,6 +107,8 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
       setThumbnailFileName("");
       setThumbnailPreview("");
       setFileErrors({});
+      if (gameFileInputRef.current) gameFileInputRef.current.value = "";
+      if (thumbnailFileInputRef.current) thumbnailFileInputRef.current.value = "";
       onSuccess?.();
     },
     onError: (error: Error) => {
@@ -116,7 +121,6 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
   });
 
   const onSubmit = (data: TitleFormData) => {
-    console.log("onSubmit called with:", { uploadMode, gameFile: gameFile?.name, thumbnailFile: thumbnailFile?.name, htmlCode: htmlCode.length });
     const errors: { game?: string; thumbnail?: string } = {};
     
     if (uploadMode === "code") {
@@ -126,30 +130,32 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
     } else {
       if (!gameFile) {
         errors.game = "Game file is required";
-        console.log("No game file selected");
       } else if (!gameFile.name.endsWith(".html") && !gameFile.name.endsWith(".swf")) {
         errors.game = "File must be HTML or SWF";
-        console.log("Invalid game file type:", gameFile.name);
       }
     }
     
     if (!thumbnailFile) {
       errors.thumbnail = "Thumbnail is required";
-      console.log("No thumbnail file selected");
     } else if (!thumbnailFile.type.startsWith("image/")) {
       errors.thumbnail = "File must be an image";
-      console.log("Invalid thumbnail type:", thumbnailFile.type);
     }
     
     if (Object.keys(errors).length > 0) {
-      console.log("Validation errors:", errors);
       setFileErrors(errors);
       return;
     }
 
-    console.log("Validation passed, submitting...");
     setFileErrors({});
     uploadMutation.mutate(data);
+  };
+
+  const handleGameFileClick = () => {
+    gameFileInputRef.current?.click();
+  };
+
+  const handleThumbnailClick = () => {
+    thumbnailFileInputRef.current?.click();
   };
 
   return (
@@ -195,46 +201,55 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="file" className="space-y-0">
-              <label
-                htmlFor="game-file-input"
-                className="flex items-center justify-center gap-2 sm:gap-3 p-4 sm:p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all block"
-                data-testid="label-game-upload"
+            <TabsContent value="file" className="space-y-4">
+              <input
+                ref={gameFileInputRef}
+                type="file"
+                accept=".html,.swf,text/html,text/plain,application/x-shockwave-flash"
+                data-testid="input-game-file"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setGameFile(file);
+                    setGameFileName(file.name);
+                    setFileErrors(prev => ({ ...prev, game: undefined }));
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleGameFileClick}
+                className="w-full h-24 flex flex-col items-center justify-center gap-2 cursor-pointer"
+                data-testid="button-select-game-file"
               >
-                <input
-                  type="file"
-                  accept=".html,.swf,text/html,text/plain,application/x-shockwave-flash"
-                  id="game-file-input"
-                  data-testid="input-game-file"
-                  style={{ position: 'absolute', left: '-9999px', visibility: 'hidden' }}
-                  onChange={(e) => {
-                    const file = (e.target as HTMLInputElement).files?.[0];
-                    console.log("Game file selected:", file?.name, file?.type);
-                    if (file) {
-                      setGameFile(file);
-                      setGameFileName(file.name);
-                      setFileErrors(prev => ({ ...prev, game: undefined }));
-                    }
-                  }}
-                />
-                {gameFileName.endsWith(".swf") ? (
-                  <Disc3 className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
+                {gameFileName ? (
+                  <>
+                    {gameFileName.endsWith(".swf") ? (
+                      <Disc3 className="w-8 h-8" />
+                    ) : (
+                      <FileCode className="w-8 h-8" />
+                    )}
+                    <div className="text-center">
+                      <p className="font-medium text-sm line-clamp-1">{gameFileName}</p>
+                      <p className="text-xs text-muted-foreground">Click to change</p>
+                    </div>
+                  </>
                 ) : (
-                  <FileCode className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
+                  <>
+                    <FileCode className="w-8 h-8" />
+                    <div className="text-center">
+                      <p className="font-medium text-sm">Click to select game file</p>
+                      <p className="text-xs text-muted-foreground">HTML or SWF</p>
+                    </div>
+                  </>
                 )}
-                <div className="text-center">
-                  <p className="font-medium text-foreground text-xs sm:text-sm line-clamp-1" data-testid="text-game-filename">
-                    {gameFileName || "Click to upload game file"}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
-                    HTML or SWF game file
-                  </p>
-                </div>
-              </label>
-              {fileErrors.game && <p className="text-xs sm:text-sm text-destructive mt-2">{fileErrors.game}</p>}
+              </Button>
+              {fileErrors.game && <p className="text-xs sm:text-sm text-destructive">{fileErrors.game}</p>}
             </TabsContent>
 
-            <TabsContent value="code" className="space-y-0">
+            <TabsContent value="code" className="space-y-4">
               <Textarea
                 placeholder="Paste your HTML game code here..."
                 value={htmlCode}
@@ -245,68 +260,69 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
                 className="resize-none h-48 text-sm font-mono"
                 data-testid="textarea-html-code"
               />
-              {fileErrors.game && <p className="text-xs sm:text-sm text-destructive mt-2">{fileErrors.game}</p>}
+              {fileErrors.game && <p className="text-xs sm:text-sm text-destructive">{fileErrors.game}</p>}
             </TabsContent>
           </Tabs>
         </div>
 
         <div>
           <Label className="text-sm sm:text-base font-semibold block mb-2">Thumbnail Image</Label>
-          <label
-            htmlFor="thumbnail-input"
-            className="flex items-center justify-center gap-2 sm:gap-3 p-4 sm:p-8 border-2 border-dashed border-border rounded-md cursor-pointer hover-elevate active-elevate-2 transition-all block"
-            data-testid="label-thumbnail-upload"
+          <input
+            ref={thumbnailFileInputRef}
+            type="file"
+            accept="image/*"
+            data-testid="input-thumbnail"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                setThumbnailFile(file);
+                setThumbnailFileName(file.name);
+                setFileErrors(prev => ({ ...prev, thumbnail: undefined }));
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  setThumbnailPreview(reader.result as string);
+                };
+                reader.readAsDataURL(file);
+              }
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleThumbnailClick}
+            className="w-full min-h-48 flex flex-col items-center justify-center gap-3 cursor-pointer"
+            data-testid="button-select-thumbnail"
           >
-            <input
-              type="file"
-              accept="image/*"
-              id="thumbnail-input"
-              data-testid="input-thumbnail"
-              style={{ position: 'absolute', left: '-9999px', visibility: 'hidden' }}
-              onChange={(e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                console.log("Thumbnail file selected:", file?.name, file?.type);
-                if (file) {
-                  setThumbnailFile(file);
-                  setThumbnailFileName(file.name);
-                  setFileErrors(prev => ({ ...prev, thumbnail: undefined }));
-                  const reader = new FileReader();
-                  reader.onloadend = () => {
-                    setThumbnailPreview(reader.result as string);
-                  };
-                  reader.readAsDataURL(file);
-                }
-              }}
-            />
             {thumbnailPreview ? (
               <div className="w-full">
                 <img 
                   src={thumbnailPreview} 
                   alt="Thumbnail preview" 
-                  className="w-full h-24 sm:h-48 object-cover rounded-md mb-2 sm:mb-3"
+                  className="w-full h-32 object-cover rounded-md mb-2"
                   data-testid="img-thumbnail-preview"
                 />
                 <p className="font-medium text-foreground text-center text-xs sm:text-sm line-clamp-1" data-testid="text-thumbnail-filename">
                   {thumbnailFileName}
                 </p>
-                <p className="text-xs text-muted-foreground text-center mt-0.5 sm:mt-1">
+                <p className="text-xs text-muted-foreground text-center mt-1">
                   Click to change
                 </p>
               </div>
             ) : (
               <>
-                <ImageIcon className="w-6 sm:w-8 h-6 sm:h-8 text-muted-foreground flex-shrink-0" />
+                <ImageIcon className="w-8 h-8" />
                 <div className="text-center">
-                  <p className="font-medium text-foreground text-xs sm:text-sm">
-                    Upload thumbnail
+                  <p className="font-medium text-sm">
+                    Click to select thumbnail
                   </p>
-                  <p className="text-xs text-muted-foreground mt-0.5 sm:mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Image file
                   </p>
                 </div>
               </>
             )}
-          </label>
+          </Button>
           {fileErrors.thumbnail && <p className="text-xs sm:text-sm text-destructive mt-2">{fileErrors.thumbnail}</p>}
         </div>
 
