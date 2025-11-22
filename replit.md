@@ -98,3 +98,11 @@ Preferred communication style: Simple, everyday language.
 - connect-pg-simple - PostgreSQL session store (configured for future use)
 
 **Font Integration**: Google Fonts (Poppins) loaded via CDN in index.html for consistent typography.
+
+## Quick Commands
+
+**Mobile Push Code (Git Push to GitHub):**
+```bash
+git push https://s0408270-maker:YOUR_GITHUB_TOKEN@github.com/s0408270-maker/Gamehub.git main
+```
+When user says "give me the mobile push code", run this git push command.
