@@ -158,8 +158,9 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
                 src={blobUrl}
                 className="w-full h-full border-0"
                 title={game.title}
-                sandbox="allow-scripts allow-forms allow-pointer-lock"
+                sandbox="allow-scripts allow-forms allow-pointer-lock allow-same-origin allow-popups allow-presentation"
                 referrerPolicy="no-referrer"
+                allowFullScreen
                 data-testid="iframe-game"
               />
             )
