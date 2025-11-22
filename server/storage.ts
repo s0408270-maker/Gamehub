@@ -1,4 +1,4 @@
-import { type Game, type InsertGame, games, groups, groupMembers, groupGames, messages, users, type Group, type InsertGroup, type GroupGame, type InsertGroupGame, type Message, type InsertMessage, type User, type InsertUser, type GroupMember, cosmetics, userCosmetics, activeCosmeticsMap, type Cosmetic, type UserCosmetic, type ActiveCosmetic } from "@shared/schema";
+import { type Game, type InsertGame, games, groups, groupMembers, groupGames, messages, users, type Group, type InsertGroup, type GroupGame, type InsertGroupGame, type Message, type InsertMessage, type User, type InsertUser, type GroupMember, cosmetics, userCosmetics, activeCosmeticsMap, type Cosmetic, type UserCosmetic, type ActiveCosmetic, gameDifficultyVotes, type GameDifficultyVote, type InsertGameDifficultyVote, cosmeticTrades, type CosmeticTrade, type InsertCosmeticTrade, battlePassTiers, userBattlePassProgress, type BattlePassTier, type InsertBattlePassTier, type UserBattlePassProgress, type InsertUserBattlePassProgress } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -43,6 +43,23 @@ export interface IStorage {
   getUserCosmetics(userId: string): Promise<UserCosmetic[]>;
   setActiveCosmetic(userId: string, cosmeticId: string | null): Promise<ActiveCosmetic>;
   getActiveCosmetic(userId: string): Promise<ActiveCosmetic | undefined>;
+
+  // Game difficulty voting
+  voteGameDifficulty(gameId: string, userId: string, difficulty: number): Promise<GameDifficultyVote>;
+  getGameDifficultyVotes(gameId: string): Promise<GameDifficultyVote[]>;
+  getAverageDifficulty(gameId: string): Promise<number>;
+
+  // Cosmetic trading
+  proposeCosmeticTrade(groupId: string, senderId: string, receiverId: string, senderCosmeticIds: string[], receiverCosmeticIds: string[]): Promise<CosmeticTrade>;
+  getUserCosmeticTrades(userId: string): Promise<CosmeticTrade[]>;
+  acceptCosmeticTrade(tradeId: string): Promise<CosmeticTrade>;
+  rejectCosmeticTrade(tradeId: string): Promise<CosmeticTrade>;
+
+  // Battle pass
+  getBattlePassTiers(season: number): Promise<BattlePassTier[]>;
+  getUserBattlePassProgress(userId: string): Promise<UserBattlePassProgress>;
+  addBattlePassExperience(userId: string, amount: number): Promise<UserBattlePassProgress>;
+  purchagePremiumPass(userId: string): Promise<UserBattlePassProgress>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -267,6 +284,100 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select().from(activeCosmeticsMap)
       .where(eq(activeCosmeticsMap.userId, userId))
       .limit(1);
+    return result[0];
+  }
+
+  // Game difficulty voting
+  async voteGameDifficulty(gameId: string, userId: string, difficulty: number): Promise<GameDifficultyVote> {
+    const result = await db.insert(gameDifficultyVotes)
+      .values({ gameId, userId, difficulty })
+      .returning();
+    return result[0];
+  }
+
+  async getGameDifficultyVotes(gameId: string): Promise<GameDifficultyVote[]> {
+    return await db.select().from(gameDifficultyVotes)
+      .where(eq(gameDifficultyVotes.gameId, gameId));
+  }
+
+  async getAverageDifficulty(gameId: string): Promise<number> {
+    const votes = await this.getGameDifficultyVotes(gameId);
+    if (votes.length === 0) return 0;
+    const sum = votes.reduce((acc, v) => acc + v.difficulty, 0);
+    return Math.round((sum / votes.length) * 10) / 10;
+  }
+
+  // Cosmetic trading
+  async proposeCosmeticTrade(groupId: string, senderId: string, receiverId: string, senderCosmeticIds: string[], receiverCosmeticIds: string[]): Promise<CosmeticTrade> {
+    const result = await db.insert(cosmeticTrades)
+      .values({
+        groupId,
+        senderId,
+        receiverId,
+        senderCosmeticIds: JSON.stringify(senderCosmeticIds),
+        receiverCosmeticIds: JSON.stringify(receiverCosmeticIds),
+        status: "pending",
+      })
+      .returning();
+    return result[0];
+  }
+
+  async getUserCosmeticTrades(userId: string): Promise<CosmeticTrade[]> {
+    return await db.select().from(cosmeticTrades)
+      .where(eq(cosmeticTrades.receiverId, userId));
+  }
+
+  async acceptCosmeticTrade(tradeId: string): Promise<CosmeticTrade> {
+    const result = await db.update(cosmeticTrades)
+      .set({ status: "accepted" })
+      .where(eq(cosmeticTrades.id, tradeId))
+      .returning();
+    return result[0];
+  }
+
+  async rejectCosmeticTrade(tradeId: string): Promise<CosmeticTrade> {
+    const result = await db.update(cosmeticTrades)
+      .set({ status: "rejected" })
+      .where(eq(cosmeticTrades.id, tradeId))
+      .returning();
+    return result[0];
+  }
+
+  // Battle pass
+  async getBattlePassTiers(season: number): Promise<BattlePassTier[]> {
+    return await db.select().from(battlePassTiers)
+      .where(eq(battlePassTiers.season, season));
+  }
+
+  async getUserBattlePassProgress(userId: string): Promise<UserBattlePassProgress> {
+    const result = await db.select().from(userBattlePassProgress)
+      .where(eq(userBattlePassProgress.userId, userId))
+      .limit(1);
+    if (result[0]) return result[0];
+    
+    const newProgress = await db.insert(userBattlePassProgress)
+      .values({ userId, currentSeason: 1, currentTier: 0, experience: 0, hasPremiumPass: "false" })
+      .returning();
+    return newProgress[0];
+  }
+
+  async addBattlePassExperience(userId: string, amount: number): Promise<UserBattlePassProgress> {
+    const progress = await this.getUserBattlePassProgress(userId);
+    const newExp = (progress.experience || 0) + amount;
+    const newTier = Math.min(50, progress.currentTier + Math.floor(newExp / 500));
+    
+    const result = await db.update(userBattlePassProgress)
+      .set({ experience: newExp % 500, currentTier: newTier })
+      .where(eq(userBattlePassProgress.userId, userId))
+      .returning();
+    return result[0];
+  }
+
+  async purchagePremiumPass(userId: string): Promise<UserBattlePassProgress> {
+    const result = await db.update(userBattlePassProgress)
+      .set({ hasPremiumPass: "true" })
+      .where(eq(userBattlePassProgress.userId, userId))
+      .returning();
     return result[0];
   }
 }

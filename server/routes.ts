@@ -662,6 +662,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GAME DIFFICULTY VOTING
+  app.post("/api/games/:gameId/difficulty-vote", async (req, res) => {
+    try {
+      const { username, difficulty } = req.body;
+      const { gameId } = req.params;
+      if (!username || !difficulty || difficulty < 1 || difficulty > 5) {
+        return res.status(400).json({ message: "Username and difficulty (1-5) required" });
+      }
+      const user = await storage.getUserByUsername(username);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      const vote = await storage.voteGameDifficulty(gameId, user.id, difficulty);
+      cache.invalidatePattern(`game:${gameId}:`);
+      res.json(vote);
+    } catch (error) {
+      console.error("Error voting difficulty:", error);
+      res.status(400).json({ message: "Failed to vote" });
+    }
+  });
+
+  app.get("/api/games/:gameId/difficulty", async (req, res) => {
+    try {
+      const avg = await storage.getAverageDifficulty(req.params.gameId);
+      const votes = await storage.getGameDifficultyVotes(req.params.gameId);
+      res.json({ average: avg, totalVotes: votes.length, votes });
+    } catch (error) {
+      console.error("Error fetching difficulty:", error);
+      res.status(500).json({ message: "Failed to fetch difficulty" });
+    }
+  });
+
+  // COSMETIC TRADING
+  app.post("/api/trades/propose", async (req, res) => {
+    try {
+      const { username, receiverId, groupId, senderCosmeticIds, receiverCosmeticIds } = req.body;
+      if (!username || !receiverId || !groupId || !senderCosmeticIds || !receiverCosmeticIds) {
+        return res.status(400).json({ message: "All fields required" });
+      }
+      const sender = await storage.getUserByUsername(username);
+      if (!sender) return res.status(404).json({ message: "User not found" });
+      const isMember = await storage.isGroupMember(groupId, sender.id);
+      if (!isMember) return res.status(403).json({ message: "Not in group" });
+      const trade = await storage.proposeCosmeticTrade(groupId, sender.id, receiverId, senderCosmeticIds, receiverCosmeticIds);
+      res.status(201).json(trade);
+    } catch (error) {
+      console.error("Error proposing trade:", error);
+      res.status(400).json({ message: "Failed to propose trade" });
+    }
+  });
+
+  app.post("/api/trades/:tradeId/accept", async (req, res) => {
+    try {
+      const { username } = req.body;
+      const user = await storage.getUserByUsername(username);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      const trade = await storage.acceptCosmeticTrade(req.params.tradeId);
+      res.json(trade);
+    } catch (error) {
+      console.error("Error accepting trade:", error);
+      res.status(400).json({ message: "Failed to accept trade" });
+    }
+  });
+
+  app.post("/api/trades/:tradeId/reject", async (req, res) => {
+    try {
+      const trade = await storage.rejectCosmeticTrade(req.params.tradeId);
+      res.json(trade);
+    } catch (error) {
+      console.error("Error rejecting trade:", error);
+      res.status(400).json({ message: "Failed to reject trade" });
+    }
+  });
+
+  app.get("/api/user/:username/trades", async (req, res) => {
+    try {
+      const user = await storage.getUserByUsername(req.params.username);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      const trades = await storage.getUserCosmeticTrades(user.id);
+      res.json(trades);
+    } catch (error) {
+      console.error("Error fetching trades:", error);
+      res.status(500).json({ message: "Failed to fetch trades" });
+    }
+  });
+
+  // BATTLE PASS
+  app.get("/api/battlepass/:username", async (req, res) => {
+    try {
+      const user = await storage.getUserByUsername(req.params.username);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      const progress = await storage.getUserBattlePassProgress(user.id);
+      const tiers = await storage.getBattlePassTiers(progress.currentSeason);
+      res.json({ progress, tiers });
+    } catch (error) {
+      console.error("Error fetching battle pass:", error);
+      res.status(500).json({ message: "Failed to fetch battle pass" });
+    }
+  });
+
+  app.post("/api/battlepass/:username/add-xp", async (req, res) => {
+    try {
+      const { amount } = req.body;
+      const user = await storage.getUserByUsername(req.params.username);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      if (!amount) return res.status(400).json({ message: "Amount required" });
+      const progress = await storage.addBattlePassExperience(user.id, amount);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error adding XP:", error);
+      res.status(400).json({ message: "Failed to add experience" });
+    }
+  });
+
+  app.post("/api/battlepass/:username/purchase-premium", async (req, res) => {
+    try {
+      const username = req.params.username;
+      const user = await storage.getUserByUsername(username);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      if (user.coins < 500) return res.status(400).json({ message: "Not enough coins (500 needed)" });
+      await storage.addCoins(user.id, -500);
+      const progress = await storage.purchagePremiumPass(user.id);
+      cache.invalidate(`user:${username}`);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error purchasing premium:", error);
+      res.status(400).json({ message: "Failed to purchase premium pass" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
