@@ -44,7 +44,7 @@ export default function Home() {
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Gamepad2 className="w-6 sm:w-8 h-6 sm:h-8 text-primary flex-shrink-0" data-testid="icon-logo" />
             <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate" data-testid="text-site-name">
-              GameHub
+              PixelPlex
             </h1>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -82,7 +82,7 @@ export default function Home() {
           <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
             <Gamepad2 className="w-8 sm:w-12 h-8 sm:h-12 text-primary flex-shrink-0" data-testid="icon-hero-gamepad" />
             <h2 className="text-2xl sm:text-5xl md:text-6xl font-black text-white tracking-tight line-clamp-2" data-testid="heading-hero-title">
-              GameHub
+              PixelPlex
             </h2>
           </div>
           <p className="text-base sm:text-xl md:text-2xl text-white/90 mb-4 sm:mb-8 font-medium" data-testid="text-hero-subtitle">
@@ -240,7 +240,7 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <Gamepad2 className="w-6 h-6 text-primary" />
               <p className="text-muted-foreground" data-testid="text-footer-copyright">
-                © 2024 GameHub. Your personal game arcade.
+                © 2024 PixelPlex. Your personal game arcade.
               </p>
             </div>
             <div className="flex items-center gap-4">

@@ -1,8 +1,8 @@
-# GameHub - HTML5 Game Portal
+# PixelPlex - HTML5 Game Portal
 
 ## Overview
 
-GameHub is a web-based game portal that allows users to upload, browse, and play HTML5 games directly in their browser. The platform provides a Steam/itch.io-inspired gaming aesthetic with a focus on showcasing game thumbnails prominently and enabling seamless in-browser gameplay. Users can upload HTML game files along with thumbnails, and the games are displayed in a responsive grid layout with hover effects and modal-based gameplay.
+PixelPlex is a web-based game portal that allows users to upload, browse, and play HTML5 games directly in their browser. The platform provides a Steam/itch.io-inspired gaming aesthetic with a focus on showcasing game thumbnails prominently and enabling seamless in-browser gameplay. Users can upload HTML game files along with thumbnails, and the games are displayed in a responsive grid layout with hover effects and modal-based gameplay.
 
 ## User Preferences
 

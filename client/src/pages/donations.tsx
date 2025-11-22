@@ -10,9 +10,9 @@ export default function Donations() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/20 mb-4">
             <Heart className="w-8 h-8 text-red-500" />
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">Support GameHub</h1>
+          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">Support PixelPlex</h1>
           <p className="text-lg text-white/80">
-            Love GameHub? Help keep this platform running and growing! Your support means everything.
+            Love PixelPlex? Help keep this platform running and growing! Your support means everything.
           </p>
         </div>
 
@@ -27,7 +27,7 @@ export default function Donations() {
               </div>
             </div>
             <p className="text-white/60 mb-6">
-              Support us directly via CashApp. Every donation helps us maintain and improve GameHub for the community.
+              Support us directly via CashApp. Every donation helps us maintain and improve PixelPlex for the community.
             </p>
             <a
               href="https://cash.app/$SamCitko"
@@ -52,7 +52,7 @@ export default function Donations() {
               </div>
               <div>
                 <p className="font-semibold text-white">Server & Hosting</p>
-                <p className="text-sm text-white/60">Keep GameHub online and running smoothly</p>
+                <p className="text-sm text-white/60">Keep PixelPlex online and running smoothly</p>
               </div>
             </li>
             <li className="flex gap-3">
@@ -79,7 +79,7 @@ export default function Donations() {
         {/* Thank You */}
         <div className="text-center mt-12">
           <p className="text-white/70 text-lg">
-            Even if you can't donate, we appreciate your support by playing games and sharing GameHub with others! 🎮
+            Even if you can't donate, we appreciate your support by playing games and sharing PixelPlex with others! 🎮
           </p>
         </div>
       </div>

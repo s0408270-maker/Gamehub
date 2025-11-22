@@ -111,7 +111,7 @@ export function GameOptionsMenu({ game, createdBy }: GameOptionsMenuProps) {
             onClick={() => {
               navigator.share?.({
                 title: game.title,
-                text: `Check out ${game.title} on GameHub!`,
+                text: `Check out ${game.title} on PixelPlex!`,
               }).catch(() => {
                 navigator.clipboard.writeText(window.location.href);
                 toast({ title: "Copied", description: "Game link copied to clipboard" });

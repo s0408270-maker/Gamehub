@@ -86,7 +86,7 @@ function Header() {
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <Gamepad2 className="w-6 sm:w-8 h-6 sm:h-8 text-primary flex-shrink-0" data-testid="icon-logo" />
           <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate" data-testid="text-site-name">
-            GameHub
+            PixelPlex
           </h1>
         </div>
         

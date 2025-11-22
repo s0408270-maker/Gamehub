@@ -48,7 +48,7 @@ export default function Auth() {
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Gamepad2 className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl font-bold">GameHub</h1>
+            <h1 className="text-2xl font-bold">PixelPlex</h1>
           </div>
           <CardTitle>{isLogin ? "Login" : "Create Account"}</CardTitle>
           <CardDescription>
