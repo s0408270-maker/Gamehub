@@ -63,6 +63,7 @@ export interface IStorage {
   getUserBattlePassProgress(userId: string): Promise<UserBattlePassProgress>;
   addBattlePassExperience(userId: string, amount: number): Promise<UserBattlePassProgress>;
   purchagePremiumPass(userId: string): Promise<UserBattlePassProgress>;
+  finishBattlePass(userId: string): Promise<UserBattlePassProgress>;
   updateBattlePassTier(tierId: string, freeCosmeticId: string | null, premiumCosmeticId: string | null, freeGameId: string | null, premiumGameId: string | null): Promise<BattlePassTier>;
   getBattlePassOnlyCosmetics(): Promise<Cosmetic[]>;
   ensureBattlePassTiersExist(season: number): Promise<void>;
@@ -465,6 +466,14 @@ export class DatabaseStorage implements IStorage {
   async purchagePremiumPass(userId: string): Promise<UserBattlePassProgress> {
     const result = await db.update(userBattlePassProgress)
       .set({ hasPremiumPass: "true" })
+      .where(eq(userBattlePassProgress.userId, userId))
+      .returning();
+    return result[0];
+  }
+
+  async finishBattlePass(userId: string): Promise<UserBattlePassProgress> {
+    const result = await db.update(userBattlePassProgress)
+      .set({ currentTier: 50, experience: 0 })
       .where(eq(userBattlePassProgress.userId, userId))
       .returning();
     return result[0];
