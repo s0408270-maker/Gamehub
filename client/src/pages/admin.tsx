@@ -10,12 +10,60 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { AppTheme, Announcement } from "@shared/schema";
 import { Trash2, Plus, Send } from "lucide-react";
 
+const THEME_PRESETS = [
+  {
+    name: "Christmas Frozen",
+    description: "Festive Christmas theme with icy frozen effects and twinkling lights",
+    cssOverrides: `
+    --primary: 0 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 200 100% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 45 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --background: 200 20% 15%;
+    --foreground: 0 0% 95%;
+    --card: 200 15% 25%;
+    --border: 0 100% 50%;
+  `,
+  },
+  {
+    name: "Neon Night",
+    description: "Vibrant neon colors for a cyberpunk gaming experience",
+    cssOverrides: `
+    --primary: 280 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 180 100% 50%;
+    --secondary-foreground: 0 0% 0%;
+    --accent: 340 100% 50%;
+    --accent-foreground: 0 0% 100%;
+    --background: 250 30% 10%;
+    --foreground: 270 100% 95%;
+    --card: 250 30% 20%;
+    --border: 280 100% 50%;
+  `,
+  },
+  {
+    name: "Ocean Blue",
+    description: "Cool blue tones with aquatic vibes",
+    cssOverrides: `
+    --primary: 200 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 160 100% 50%;
+    --secondary-foreground: 0 0% 0%;
+    --accent: 30 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --background: 210 25% 15%;
+    --foreground: 200 30% 95%;
+    --card: 210 25% 25%;
+    --border: 200 100% 50%;
+  `,
+  },
+];
+
 export default function AdminPanel() {
   const { toast } = useToast();
   const username = localStorage.getItem("username") || "";
-  const [newThemeName, setNewThemeName] = useState("");
-  const [newThemeCss, setNewThemeCss] = useState("");
-  const [newThemeDesc, setNewThemeDesc] = useState("");
   const [targetUser, setTargetUser] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
 
@@ -36,23 +84,20 @@ export default function AdminPanel() {
   });
 
   const createThemeMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (preset: { name: string; cssOverrides: string; description: string }) => {
       return await apiRequest("POST", "/api/admin/themes", {
         username,
-        name: newThemeName,
-        cssOverrides: newThemeCss,
-        description: newThemeDesc,
+        name: preset.name,
+        cssOverrides: preset.cssOverrides,
+        description: preset.description,
       });
     },
-    onSuccess: () => {
-      toast({ title: "Theme created!", description: "New theme has been added." });
-      setNewThemeName("");
-      setNewThemeCss("");
-      setNewThemeDesc("");
+    onSuccess: (theme) => {
+      toast({ title: "Theme added!", description: `${theme.name} has been added to available themes.` });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to create theme", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to add theme", variant: "destructive" });
     },
   });
 
@@ -179,40 +224,32 @@ export default function AdminPanel() {
           </CardContent>
         </Card>
 
-        {/* Create Theme */}
+        {/* Theme Presets */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Create New Theme</CardTitle>
-            <CardDescription>Add a new site-wide theme for everyone</CardDescription>
+            <CardTitle>Theme Presets</CardTitle>
+            <CardDescription>Add a preset theme to your available themes</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Input
-              placeholder="Theme name (e.g., Neon Purple)"
-              value={newThemeName}
-              onChange={(e) => setNewThemeName(e.target.value)}
-              data-testid="input-theme-name"
-            />
-            <Textarea
-              placeholder="CSS overrides (e.g., --primary: 280 100% 50%;)"
-              value={newThemeCss}
-              onChange={(e) => setNewThemeCss(e.target.value)}
-              className="font-mono text-sm"
-              data-testid="textarea-theme-css"
-            />
-            <Input
-              placeholder="Description (optional)"
-              value={newThemeDesc}
-              onChange={(e) => setNewThemeDesc(e.target.value)}
-              data-testid="input-theme-desc"
-            />
-            <Button
-              onClick={() => createThemeMutation.mutate()}
-              disabled={!newThemeName || !newThemeCss || createThemeMutation.isPending}
-              data-testid="button-create-theme"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create Theme
-            </Button>
+          <CardContent className="space-y-3">
+            {THEME_PRESETS.map((preset) => (
+              <div key={preset.name} className="p-3 border rounded-md">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <h3 className="font-semibold">{preset.name}</h3>
+                    <p className="text-sm text-muted-foreground">{preset.description}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => createThemeMutation.mutate(preset)}
+                    disabled={createThemeMutation.isPending || themes.some(t => t.name === preset.name)}
+                    data-testid={`button-add-preset-${preset.name.replace(/\s+/g, '-').toLowerCase()}`}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {themes.some(t => t.name === preset.name) ? "Added" : "Add"}
+                  </Button>
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
 
