@@ -1,16 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
-import { ArrowLeft, Send, Upload, MessageSquare, Gamepad2 } from "lucide-react";
+import { ArrowLeft, Send, Upload, MessageSquare, Gamepad2, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Group, Message, GroupGame } from "@shared/schema";
+import type { Group, Message, GroupGame, User, UserCosmetic, CosmeticTrade } from "@shared/schema";
 
 export default function GroupDetail() {
   const [, params] = useRoute("/groups/:groupId");
@@ -18,6 +19,9 @@ export default function GroupDetail() {
   const groupId = params?.groupId || "";
   const [messageText, setMessageText] = useState("");
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedRecipient, setSelectedRecipient] = useState<string>("");
+  const [senderCosmetics, setSenderCosmetics] = useState<string[]>([]);
+  const [receiverCosmetics, setReceiverCosmetics] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
@@ -38,6 +42,21 @@ export default function GroupDetail() {
   const { data: games = [], isLoading: gamesLoading } = useQuery<GroupGame[]>({
     queryKey: [`/api/groups/${groupId}/games`],
     enabled: !!groupId,
+  });
+
+  const { data: groupMembers = [] } = useQuery<(User & { cosmetics: UserCosmetic[] })[]>({
+    queryKey: [`/api/groups/${groupId}/members`],
+    enabled: !!groupId,
+  });
+
+  const { data: myCosmetics = [] } = useQuery<UserCosmetic[]>({
+    queryKey: [`/api/users/${username}/cosmetics`],
+    enabled: !!username,
+  });
+
+  const { data: myTrades = [] } = useQuery<CosmeticTrade[]>({
+    queryKey: [`/api/user/${username}/trades`],
+    enabled: !!username,
   });
 
   // Auto-scroll to bottom
@@ -63,6 +82,59 @@ export default function GroupDetail() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to send message" });
+    },
+  });
+
+  const proposeTradeMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedRecipient || senderCosmetics.length === 0 || receiverCosmetics.length === 0) {
+        toast({ title: "Error", description: "Select recipient and cosmetics" });
+        return;
+      }
+      return await apiRequest("POST", "/api/trades/propose", {
+        username,
+        receiverId: selectedRecipient,
+        groupId,
+        senderCosmeticIds: senderCosmetics,
+        receiverCosmeticIds: receiverCosmetics,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Trade proposed!", description: "Waiting for recipient to respond" });
+      setSenderCosmetics([]);
+      setReceiverCosmetics([]);
+      setSelectedRecipient("");
+      queryClient.invalidateQueries({ queryKey: [`/api/user/${username}/trades`] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to propose trade", variant: "destructive" });
+    },
+  });
+
+  const acceptTradeMutation = useMutation({
+    mutationFn: async (tradeId: string) => {
+      return await apiRequest("POST", `/api/trades/${tradeId}/accept`, { username });
+    },
+    onSuccess: () => {
+      toast({ title: "Trade accepted!", description: "Cosmetics have been exchanged" });
+      queryClient.invalidateQueries({ queryKey: [`/api/user/${username}/trades`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${username}/cosmetics`] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to accept trade", variant: "destructive" });
+    },
+  });
+
+  const rejectTradeMutation = useMutation({
+    mutationFn: async (tradeId: string) => {
+      return await apiRequest("POST", `/api/trades/${tradeId}/reject`, { username });
+    },
+    onSuccess: () => {
+      toast({ title: "Trade rejected" });
+      queryClient.invalidateQueries({ queryKey: [`/api/user/${username}/trades`] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to reject trade", variant: "destructive" });
     },
   });
 
@@ -113,7 +185,7 @@ export default function GroupDetail() {
       <div className="flex-1 overflow-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
           <Tabs defaultValue="chat" className="w-full" data-testid="tabs-group-content">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="chat" data-testid="tab-chat">
                 <MessageSquare className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Chat</span>
@@ -121,6 +193,10 @@ export default function GroupDetail() {
               <TabsTrigger value="games" data-testid="tab-group-games">
                 <Gamepad2 className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Games</span>
+              </TabsTrigger>
+              <TabsTrigger value="trading" data-testid="tab-trading">
+                <Gift className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Trading</span>
               </TabsTrigger>
             </TabsList>
 
@@ -227,6 +303,152 @@ export default function GroupDetail() {
                   ))}
                 </div>
               )}
+            </TabsContent>
+
+            {/* Trading Tab */}
+            <TabsContent value="trading" className="space-y-6">
+              {/* Propose Trade */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Propose Trade</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Select Member</label>
+                    <Select value={selectedRecipient} onValueChange={setSelectedRecipient}>
+                      <SelectTrigger data-testid="select-trade-recipient">
+                        <SelectValue placeholder="Choose a member..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {groupMembers
+                          .filter(m => m.username !== username)
+                          .map(member => (
+                            <SelectItem key={member.id} value={member.id} data-testid={`option-member-${member.id}`}>
+                              {member.username}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {selectedRecipient && (
+                    <>
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Your Cosmetics</label>
+                        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                          {myCosmetics.length === 0 ? (
+                            <p className="text-xs text-muted-foreground col-span-2">No cosmetics to trade</p>
+                          ) : (
+                            myCosmetics.map(cosmetic => (
+                              <Button
+                                key={cosmetic.id}
+                                variant={senderCosmetics.includes(cosmetic.id) ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => {
+                                  setSenderCosmetics(prev =>
+                                    prev.includes(cosmetic.id)
+                                      ? prev.filter(id => id !== cosmetic.id)
+                                      : [...prev, cosmetic.id]
+                                  );
+                                }}
+                                data-testid={`button-select-sender-cosmetic-${cosmetic.id}`}
+                                className="h-auto py-2"
+                              >
+                                <span className="text-xs">{cosmetic.cosmeticId.slice(0, 8)}...</span>
+                              </Button>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Request Their Cosmetics</label>
+                        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                          {groupMembers.find(m => m.id === selectedRecipient)?.cosmetics?.length === 0 ? (
+                            <p className="text-xs text-muted-foreground col-span-2">No cosmetics available</p>
+                          ) : (
+                            groupMembers
+                              .find(m => m.id === selectedRecipient)
+                              ?.cosmetics?.map(cosmetic => (
+                                <Button
+                                  key={cosmetic.id}
+                                  variant={receiverCosmetics.includes(cosmetic.id) ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => {
+                                    setReceiverCosmetics(prev =>
+                                      prev.includes(cosmetic.id)
+                                        ? prev.filter(id => id !== cosmetic.id)
+                                        : [...prev, cosmetic.id]
+                                    );
+                                  }}
+                                  data-testid={`button-select-receiver-cosmetic-${cosmetic.id}`}
+                                  className="h-auto py-2"
+                                >
+                                  <span className="text-xs">{cosmetic.cosmeticId.slice(0, 8)}...</span>
+                                </Button>
+                              ))
+                          )}
+                        </div>
+                      </div>
+
+                      <Button
+                        onClick={() => proposeTradeMutation.mutate()}
+                        disabled={proposeTradeMutation.isPending || senderCosmetics.length === 0 || receiverCosmetics.length === 0}
+                        data-testid="button-propose-trade"
+                      >
+                        Propose Trade
+                      </Button>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Incoming Trades */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Trade Requests</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {myTrades.filter(t => t.status === "pending").length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No pending trade requests</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {myTrades
+                        .filter(t => t.status === "pending")
+                        .map(trade => {
+                          const sender = groupMembers.find(m => m.id === trade.senderId);
+                          return (
+                            <div key={trade.id} className="border rounded-lg p-3 space-y-2" data-testid={`trade-request-${trade.id}`}>
+                              <p className="text-sm font-medium">{sender?.username} wants to trade</p>
+                              <p className="text-xs text-muted-foreground">
+                                Offering {JSON.parse(trade.senderCosmeticIds).length} items • Requesting {JSON.parse(trade.receiverCosmeticIds).length} items
+                              </p>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => acceptTradeMutation.mutate(trade.id)}
+                                  disabled={acceptTradeMutation.isPending}
+                                  data-testid={`button-accept-trade-${trade.id}`}
+                                >
+                                  Accept
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => rejectTradeMutation.mutate(trade.id)}
+                                  disabled={rejectTradeMutation.isPending}
+                                  data-testid={`button-reject-trade-${trade.id}`}
+                                >
+                                  Reject
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
