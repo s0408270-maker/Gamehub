@@ -26,6 +26,7 @@ import CosmeticsInventory from "@/pages/cosmetics-inventory";
 import PremiumGamesShop from "@/pages/premium-games-shop";
 import BattlePass from "@/pages/battle-pass";
 import AdminPanel from "@/pages/admin";
+import OwnerPanel from "@/pages/owner";
 import NotFound from "@/pages/not-found";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AnnouncementBanner } from "@/components/announcement-banner";
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/battle-pass" component={BattlePass} />
       <Route path="/admin" component={AdminPanel} />
+      <Route path="/owner" component={OwnerPanel} />
       <Route path="/shop" component={CosmeticsShop} />
       <Route path="/inventory" component={CosmeticsInventory} />
       <Route path="/premium-games" component={PremiumGamesShop} />
@@ -62,7 +64,7 @@ function Header() {
     enabled: !!username,
   });
 
-  const currentTab = location === "/" ? "games" : location === "/leaderboard" ? "leaderboard" : location === "/battle-pass" ? "battle-pass" : location === "/shop" ? "shop" : location === "/inventory" ? "inventory" : location === "/premium-games" ? "premium-games" : location === "/admin" ? "admin" : location.startsWith("/groups") ? "groups" : "games";
+  const currentTab = location === "/" ? "games" : location === "/leaderboard" ? "leaderboard" : location === "/battle-pass" ? "battle-pass" : location === "/shop" ? "shop" : location === "/inventory" ? "inventory" : location === "/premium-games" ? "premium-games" : location === "/admin" ? "admin" : location === "/owner" ? "owner" : location.startsWith("/groups") ? "groups" : "games";
   const isInGroup = location.startsWith("/groups/") && location !== "/groups";
 
   const handleLogout = () => {
@@ -157,6 +159,7 @@ function Header() {
             else if (tab === "inventory") setLocation("/inventory");
             else if (tab === "premium-games") setLocation("/premium-games");
             else if (tab === "admin") setLocation("/admin");
+            else if (tab === "owner") setLocation("/owner");
           }} className="w-full">
             <TabsList className="w-full justify-start h-auto bg-transparent p-0 rounded-none border-b border-border/50 overflow-x-auto">
               <TabsTrigger value="games" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-games">
@@ -191,6 +194,12 @@ function Header() {
                 <TabsTrigger value="admin" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-admin">
                   <Wrench className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">Admin</span>
+                </TabsTrigger>
+              )}
+              {currentUser?.role === "owner" && (
+                <TabsTrigger value="owner" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary" data-testid="tab-owner">
+                  <Wrench className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Owner</span>
                 </TabsTrigger>
               )}
             </TabsList>

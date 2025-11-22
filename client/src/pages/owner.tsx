@@ -1,0 +1,446 @@
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { AppTheme, Announcement } from "@shared/schema";
+import { Trash2, Plus, Send, ShoppingCart, Upload } from "lucide-react";
+import { generateThemeFromDescription } from "@/lib/theme-generator";
+import { UploadGameForm } from "@/components/upload-game-form";
+
+export default function OwnerPanel() {
+  const { toast } = useToast();
+  const username = localStorage.getItem("username") || "";
+  const [targetUser, setTargetUser] = useState("");
+  const [announcementMessage, setAnnouncementMessage] = useState("");
+  const [customThemeName, setCustomThemeName] = useState("");
+  const [customThemeCss, setCustomThemeCss] = useState("");
+  const [cosmeticThemeName, setCosmeticThemeName] = useState("");
+  const [cosmeticThemeDesc, setCosmeticThemeDesc] = useState("");
+  const [cosmeticThemePrice, setCosmeticThemePrice] = useState(100);
+  const [premiumGamePrice, setPremiumGamePrice] = useState(50);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
+  }, []);
+
+  const { data: themes = [] } = useQuery<AppTheme[]>({
+    queryKey: ["/api/admin/themes"],
+  });
+
+  const { data: activeTheme } = useQuery<AppTheme | null>({
+    queryKey: ["/api/admin/themes/active"],
+  });
+
+  const { data: activeAnnouncement } = useQuery<Announcement | null>({
+    queryKey: ["/api/announcements/active"],
+  });
+
+  const { data: currentUser } = useQuery({
+    queryKey: [`/api/users/${username}`],
+    enabled: !!username,
+  });
+
+  // Check if user is owner
+  const isOwner = currentUser?.role === "owner";
+
+  if (!isOwner) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        <Card>
+          <CardContent className="pt-6 text-center text-muted-foreground">
+            You don't have permission to access the owner panel.
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const createThemeMutation = useMutation({
+    mutationFn: async (preset: { name: string; cssOverrides: string; description: string }) => {
+      return await apiRequest("POST", "/api/admin/themes", {
+        username,
+        name: preset.name,
+        cssOverrides: preset.cssOverrides,
+        description: preset.description,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Theme added!", description: "Theme has been added to available themes." });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
+      setCustomThemeName("");
+      setCustomThemeCss("");
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to add theme", variant: "destructive" });
+    },
+  });
+
+  const activateThemeMutation = useMutation({
+    mutationFn: async (themeId: string) => {
+      return await apiRequest("POST", `/api/admin/themes/${themeId}/activate`, { username });
+    },
+    onSuccess: () => {
+      toast({ title: "Theme activated!", description: "Site will reload with new theme." });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/themes/active"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
+      setTimeout(() => window.location.reload(), 500);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to activate theme", variant: "destructive" });
+    },
+  });
+
+  const disableAllThemesMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/admin/themes/disable-all", { username });
+    },
+    onSuccess: () => {
+      toast({ title: "Themes disabled!", description: "Site returned to default colors." });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/themes/active"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
+      setTimeout(() => window.location.reload(), 500);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to disable themes", variant: "destructive" });
+    },
+  });
+
+  const deleteThemeMutation = useMutation({
+    mutationFn: async (themeId: string) => {
+      return await apiRequest("DELETE", `/api/admin/themes/${themeId}`, { username });
+    },
+    onSuccess: () => {
+      toast({ title: "Theme deleted!", description: "Theme has been removed." });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete theme", variant: "destructive" });
+    },
+  });
+
+  const createThemeCosmeticMutation = useMutation({
+    mutationFn: async () => {
+      const cssValue = generateThemeFromDescription(cosmeticThemeDesc);
+      return await apiRequest("POST", "/api/cosmetics", {
+        username,
+        name: cosmeticThemeName,
+        description: cosmeticThemeDesc,
+        type: "theme",
+        price: cosmeticThemePrice,
+        value: cssValue,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Theme cosmetic created!", description: "Theme is now available in the shop." });
+      queryClient.invalidateQueries({ queryKey: ["/api/cosmetics"] });
+      setCosmeticThemeName("");
+      setCosmeticThemeDesc("");
+      setCosmeticThemePrice(100);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create theme cosmetic", variant: "destructive" });
+    },
+  });
+
+  const setAdminMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/admin/set-admin", {
+        adminUsername: username,
+        targetUsername: targetUser,
+        isAdmin: true,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Admin granted!", description: `${targetUser} is now an admin.` });
+      setTargetUser("");
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to grant admin access", variant: "destructive" });
+    },
+  });
+
+  const createAnnouncementMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/admin/announcements", {
+        username,
+        message: announcementMessage,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Announcement sent!", description: "Message is now showing to all users." });
+      setAnnouncementMessage("");
+      queryClient.invalidateQueries({ queryKey: ["/api/announcements/active"] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to send announcement", variant: "destructive" });
+    },
+  });
+
+  return (
+    <div className="min-h-screen bg-background pt-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+        <h1 className="text-3xl font-bold mb-8" data-testid="heading-owner-panel">
+          Owner Panel
+        </h1>
+
+        {/* Upload Premium Game */}
+        <Card className="mb-8 border-primary/50 bg-primary/5">
+          <CardHeader>
+            <CardTitle>Upload Premium Game</CardTitle>
+            <CardDescription>Create a game that users can purchase with coins</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-open-premium-game-upload">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Premium Game
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Upload Premium Game</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-semibold block mb-2">Price (coins)</label>
+                    <Input
+                      type="number"
+                      placeholder="Price in coins (e.g., 50)"
+                      value={premiumGamePrice}
+                      onChange={(e) => setPremiumGamePrice(parseInt(e.target.value) || 0)}
+                      min={1}
+                      data-testid="input-premium-game-price"
+                    />
+                  </div>
+                  <UploadGameForm 
+                    onSuccess={() => {
+                      setUploadDialogOpen(false);
+                      setPremiumGamePrice(50);
+                    }}
+                    isPremium={true}
+                    premiumPrice={premiumGamePrice}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
+
+        {/* Site-wide Announcement */}
+        <Card className="mb-8 border-primary/50 bg-primary/5">
+          <CardHeader>
+            <CardTitle>Site-wide Announcement</CardTitle>
+            <CardDescription>Send a message that appears on everyone's screen</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {activeAnnouncement && (
+              <div className="p-3 bg-background rounded border border-primary/30 mb-4">
+                <p className="text-sm"><span className="font-semibold">Current:</span> {activeAnnouncement.message}</p>
+              </div>
+            )}
+            <Textarea
+              placeholder="Enter announcement message (e.g., Server maintenance in 5 minutes)"
+              value={announcementMessage}
+              onChange={(e) => setAnnouncementMessage(e.target.value)}
+              data-testid="textarea-announcement"
+            />
+            <Button
+              onClick={() => createAnnouncementMutation.mutate()}
+              disabled={!announcementMessage || createAnnouncementMutation.isPending}
+              data-testid="button-send-announcement"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Send Announcement
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Grant Admin Access */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Grant Admin Access</CardTitle>
+            <CardDescription>Give a user admin permissions</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Username to make admin"
+                value={targetUser}
+                onChange={(e) => setTargetUser(e.target.value)}
+                data-testid="input-target-user"
+              />
+              <Button
+                onClick={() => setAdminMutation.mutate()}
+                disabled={!targetUser || setAdminMutation.isPending}
+                data-testid="button-grant-admin"
+              >
+                Grant Admin
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Generate Site Theme from Description */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Generate Site Theme</CardTitle>
+            <CardDescription>Create a site-wide theme from a description</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Input
+              placeholder="Theme name (e.g., Dark Purple)"
+              value={customThemeName}
+              onChange={(e) => setCustomThemeName(e.target.value)}
+              data-testid="input-custom-theme-name"
+            />
+            <Textarea
+              placeholder="Describe your theme (e.g., dark blue with neon accents, bright and vibrant, forest green with gold accents)"
+              value={customThemeCss}
+              onChange={(e) => setCustomThemeCss(e.target.value)}
+              className="min-h-24"
+              data-testid="textarea-theme-description"
+            />
+            <Button
+              onClick={() => {
+                if (customThemeName && customThemeCss) {
+                  const generated = generateThemeFromDescription(customThemeCss);
+                  createThemeMutation.mutate({
+                    name: customThemeName,
+                    cssOverrides: generated,
+                    description: customThemeCss,
+                  });
+                }
+              }}
+              disabled={!customThemeName || !customThemeCss || createThemeMutation.isPending}
+              className="w-full"
+              data-testid="button-generate-theme"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {createThemeMutation.isPending ? "Generating..." : "Generate Theme"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Create Cosmetic Theme for Shop */}
+        <Card className="mb-8 border-primary/50 bg-primary/5">
+          <CardHeader>
+            <CardTitle>Create Cosmetic Theme for Shop</CardTitle>
+            <CardDescription>Create a sellable theme cosmetic using the theme generator</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Input
+              placeholder="Theme cosmetic name (e.g., Sunset Paradise)"
+              value={cosmeticThemeName}
+              onChange={(e) => setCosmeticThemeName(e.target.value)}
+              data-testid="input-cosmetic-theme-name"
+            />
+            <Textarea
+              placeholder="Describe the theme colors (e.g., warm orange sunset with golden accents, dark neon purple)"
+              value={cosmeticThemeDesc}
+              onChange={(e) => setCosmeticThemeDesc(e.target.value)}
+              className="min-h-20"
+              data-testid="textarea-cosmetic-theme-desc"
+            />
+            <Input
+              type="number"
+              placeholder="Price in coins"
+              value={cosmeticThemePrice}
+              onChange={(e) => setCosmeticThemePrice(parseInt(e.target.value) || 0)}
+              min={1}
+              data-testid="input-cosmetic-theme-price"
+            />
+            <Button
+              onClick={() => {
+                if (cosmeticThemeName && cosmeticThemeDesc && cosmeticThemePrice > 0) {
+                  createThemeCosmeticMutation.mutate();
+                }
+              }}
+              disabled={!cosmeticThemeName || !cosmeticThemeDesc || cosmeticThemePrice <= 0 || createThemeCosmeticMutation.isPending}
+              className="w-full"
+              data-testid="button-create-theme-cosmetic"
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              {createThemeCosmeticMutation.isPending ? "Creating..." : "Create Theme Cosmetic"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Active Theme & List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Available Themes</CardTitle>
+            <CardDescription>
+              {activeTheme ? `Current active: ${activeTheme.name}` : "No active theme"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {themes.length === 0 ? (
+                <p className="text-muted-foreground">No themes created yet</p>
+              ) : (
+                themes.map((theme) => (
+                  <div
+                    key={theme.id}
+                    className="flex items-center justify-between p-3 border rounded-md"
+                    data-testid={`theme-item-${theme.id}`}
+                  >
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{theme.name}</h3>
+                      {theme.description && (
+                        <p className="text-sm text-muted-foreground">{theme.description}</p>
+                      )}
+                      {theme.isActive === "true" && (
+                        <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded mt-1 inline-block">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      {theme.isActive === "true" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => disableAllThemesMutation.mutate()}
+                          disabled={disableAllThemesMutation.isPending}
+                          data-testid={`button-disable-theme-${theme.id}`}
+                        >
+                          Disable
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => activateThemeMutation.mutate(theme.id)}
+                          disabled={activateThemeMutation.isPending}
+                          data-testid={`button-activate-theme-${theme.id}`}
+                        >
+                          Activate
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => deleteThemeMutation.mutate(theme.id)}
+                        disabled={deleteThemeMutation.isPending}
+                        data-testid={`button-delete-theme-${theme.id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
