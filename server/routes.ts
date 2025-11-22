@@ -838,6 +838,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Track game play sessions for XP earning (15 XP per minute)
+  const gamePlayingSessions = new Map<string, { startTime: number; gameId: string }>();
+
+  app.post("/api/games/:gameId/play-start", async (req, res) => {
+    try {
+      const { username } = req.body;
+      const user = await storage.getUserByUsername(username);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      gamePlayingSessions.set(user.id, {
+        startTime: Date.now(),
+        gameId: req.params.gameId,
+      });
+      res.json({ message: "Playing started" });
+    } catch (error) {
+      console.error("Error starting play session:", error);
+      res.status(400).json({ message: "Failed to start session" });
+    }
+  });
+
+  app.post("/api/games/:gameId/play-end", async (req, res) => {
+    try {
+      const { username } = req.body;
+      const user = await storage.getUserByUsername(username);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      
+      const session = gamePlayingSessions.get(user.id);
+      if (!session) {
+        return res.status(400).json({ message: "No active play session" });
+      }
+
+      const playTimeMinutes = Math.max(1, Math.floor((Date.now() - session.startTime) / 60000));
+      const xpEarned = playTimeMinutes * 15;
+      
+      await storage.addBattlePassExperience(user.id, xpEarned);
+      await storage.addCoins(user.id, xpEarned);
+      
+      gamePlayingSessions.delete(user.id);
+      res.json({ xpEarned, coinsEarned: xpEarned, playTimeMinutes });
+    } catch (error) {
+      console.error("Error ending play session:", error);
+      res.status(400).json({ message: "Failed to end session" });
+    }
+  });
+
   app.post("/api/battlepass/:username/add-xp", async (req, res) => {
     try {
       const { amount } = req.body;
@@ -865,6 +909,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error purchasing premium:", error);
       res.status(400).json({ message: "Failed to purchase premium pass" });
+    }
+  });
+
+  // OWNER - BATTLE PASS MANAGEMENT
+  app.get("/api/owner/battlepass/cosmetics", async (req, res) => {
+    try {
+      const username = req.query.username as string;
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.role !== "owner") {
+        return res.status(403).json({ message: "Owner access required" });
+      }
+      const cosmetics = await storage.getBattlePassOnlyCosmetics();
+      res.json(cosmetics);
+    } catch (error) {
+      console.error("Error fetching BP cosmetics:", error);
+      res.status(500).json({ message: "Failed to fetch cosmetics" });
+    }
+  });
+
+  app.get("/api/owner/battlepass/:season/tiers", async (req, res) => {
+    try {
+      const username = req.query.username as string;
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.role !== "owner") {
+        return res.status(403).json({ message: "Owner access required" });
+      }
+      const season = parseInt(req.params.season);
+      await storage.ensureBattlePassTiersExist(season);
+      const tiers = await storage.getBattlePassTiers(season);
+      res.json(tiers);
+    } catch (error) {
+      console.error("Error fetching BP tiers:", error);
+      res.status(500).json({ message: "Failed to fetch tiers" });
+    }
+  });
+
+  app.patch("/api/owner/battlepass/tier/:tierId", async (req, res) => {
+    try {
+      const username = req.body.username;
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.role !== "owner") {
+        return res.status(403).json({ message: "Owner access required" });
+      }
+      const { freeCosmeticId, premiumCosmeticId, freeGameId, premiumGameId } = req.body;
+      const tier = await storage.updateBattlePassTier(
+        req.params.tierId,
+        freeCosmeticId || null,
+        premiumCosmeticId || null,
+        freeGameId || null,
+        premiumGameId || null
+      );
+      res.json(tier);
+    } catch (error) {
+      console.error("Error updating BP tier:", error);
+      res.status(400).json({ message: "Failed to update tier" });
     }
   });
 

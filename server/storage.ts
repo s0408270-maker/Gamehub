@@ -61,6 +61,9 @@ export interface IStorage {
   getUserBattlePassProgress(userId: string): Promise<UserBattlePassProgress>;
   addBattlePassExperience(userId: string, amount: number): Promise<UserBattlePassProgress>;
   purchagePremiumPass(userId: string): Promise<UserBattlePassProgress>;
+  updateBattlePassTier(tierId: string, freeCosmeticId: string | null, premiumCosmeticId: string | null, freeGameId: string | null, premiumGameId: string | null): Promise<BattlePassTier>;
+  getBattlePassOnlyCosmetics(): Promise<Cosmetic[]>;
+  ensureBattlePassTiersExist(season: number): Promise<void>;
 
   // Admin features
   setUserAdmin(username: string, isAdmin: boolean): Promise<User>;
@@ -403,10 +406,11 @@ export class DatabaseStorage implements IStorage {
   async addBattlePassExperience(userId: string, amount: number): Promise<UserBattlePassProgress> {
     const progress = await this.getUserBattlePassProgress(userId);
     const newExp = (progress.experience || 0) + amount;
-    const newTier = Math.min(50, progress.currentTier + Math.floor(newExp / 500));
+    const expPerTier = 900; // 15 xp/min * 60 min = 900 xp per tier
+    const newTier = Math.min(50, progress.currentTier + Math.floor(newExp / expPerTier));
     
     const result = await db.update(userBattlePassProgress)
-      .set({ experience: newExp % 500, currentTier: newTier })
+      .set({ experience: newExp % expPerTier, currentTier: newTier })
       .where(eq(userBattlePassProgress.userId, userId))
       .returning();
     return result[0];
@@ -431,6 +435,26 @@ export class DatabaseStorage implements IStorage {
   async getBattlePassOnlyCosmetics(): Promise<Cosmetic[]> {
     return await db.select().from(cosmetics)
       .where(eq(cosmetics.inShop, "false"));
+  }
+
+  async ensureBattlePassTiersExist(season: number): Promise<void> {
+    const existing = await db.select().from(battlePassTiers)
+      .where(eq(battlePassTiers.season, season));
+    
+    if (existing.length === 0) {
+      const tiers = [];
+      for (let tier = 1; tier <= 50; tier++) {
+        tiers.push({
+          season,
+          tier,
+          freeCosmeticId: null,
+          premiumCosmeticId: null,
+          freeGameId: null,
+          premiumGameId: null,
+        });
+      }
+      await db.insert(battlePassTiers).values(tiers as any);
+    }
   }
 
   // Admin features

@@ -232,7 +232,7 @@ function AppContent() {
     refetchInterval: 5000,
   });
 
-  const { data: allCosmetics = [] } = useQuery({
+  const { data: allCosmetics = [] } = useQuery<any[]>({
     queryKey: ["/api/cosmetics"],
     enabled: !!username,
   });
@@ -258,8 +258,8 @@ function AppContent() {
   // Apply user's equipped cosmetic
   useEffect(() => {
     const activeId = (userCosmeticsData as any)?.active?.activeCosmeticId;
-    if (activeId && allCosmetics.length > 0) {
-      const activeCosmetic = allCosmetics.find(c => c.id === activeId);
+    if (activeId && Array.isArray(allCosmetics) && allCosmetics.length > 0) {
+      const activeCosmetic = allCosmetics.find((c: any) => c.id === activeId);
       if (activeCosmetic && activeCosmetic.type === "theme" && activeCosmetic.value) {
         // Set data attribute on body to trigger theme CSS
         document.body.setAttribute("data-cosmetic", activeCosmetic.value);

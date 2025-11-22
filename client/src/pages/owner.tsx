@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { AppTheme, Announcement, User } from "@shared/schema";
-import { Trash2, Plus, Send, ShoppingCart, Upload, Ban, Search } from "lucide-react";
+import type { AppTheme, Announcement, User, Cosmetic, BattlePassTier, Game } from "@shared/schema";
+import { Trash2, Plus, Send, ShoppingCart, Upload, Ban, Search, Flame } from "lucide-react";
 import { generateThemeFromDescription } from "@/lib/theme-generator";
 import { UploadGameForm } from "@/components/upload-game-form";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -27,6 +28,8 @@ export default function OwnerPanel() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [isBanModalOpen, setIsBanModalOpen] = useState(false);
   const [banSearchQuery, setBanSearchQuery] = useState("");
+  const [battlePassSeason, setBattlePassSeason] = useState(1);
+  const [selectedTierIndex, setSelectedTierIndex] = useState<number | null>(null);
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
@@ -44,7 +47,7 @@ export default function OwnerPanel() {
     queryKey: ["/api/announcements/active"],
   });
 
-  const { data: currentUser } = useQuery({
+  const { data: currentUser } = useQuery<User>({
     queryKey: [`/api/users/${username}`],
     enabled: !!username,
   });
@@ -58,6 +61,31 @@ export default function OwnerPanel() {
       if (!res.ok) throw new Error("Failed to fetch users");
       return res.json();
     },
+  });
+
+  const { data: bpCosmetics = [] } = useQuery<Cosmetic[]>({
+    queryKey: ["/api/owner/battlepass/cosmetics", username],
+    enabled: !!username,
+    queryFn: async () => {
+      const res = await fetch(`/api/owner/battlepass/cosmetics?username=${username}`);
+      if (!res.ok) throw new Error("Failed to fetch cosmetics");
+      return res.json();
+    },
+  });
+
+  const { data: bpTiers = [] } = useQuery<BattlePassTier[]>({
+    queryKey: ["/api/owner/battlepass/tiers", battlePassSeason, username],
+    enabled: !!username,
+    queryFn: async () => {
+      const res = await fetch(`/api/owner/battlepass/${battlePassSeason}/tiers?username=${username}`);
+      if (!res.ok) throw new Error("Failed to fetch tiers");
+      return res.json();
+    },
+  });
+
+  const { data: allGames = [] } = useQuery<Game[]>({
+    queryKey: ["/api/games"],
+    enabled: !!username,
   });
 
   const createThemeMutation = useMutation({
@@ -204,6 +232,26 @@ export default function OwnerPanel() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to unban user", variant: "destructive" });
+    },
+  });
+
+  const updateTierMutation = useMutation({
+    mutationFn: async (data: { tierId: string; freeCosmeticId?: string; premiumCosmeticId?: string; freeGameId?: string; premiumGameId?: string }) => {
+      return await apiRequest("PATCH", `/api/owner/battlepass/tier/${data.tierId}`, {
+        username,
+        freeCosmeticId: data.freeCosmeticId || null,
+        premiumCosmeticId: data.premiumCosmeticId || null,
+        freeGameId: data.freeGameId || null,
+        premiumGameId: data.premiumGameId || null,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Tier updated!", description: "Battle pass tier has been updated." });
+      queryClient.invalidateQueries({ queryKey: ["/api/owner/battlepass/tiers"] });
+      setSelectedTierIndex(null);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update tier", variant: "destructive" });
     },
   });
 
@@ -498,6 +546,121 @@ export default function OwnerPanel() {
             </ScrollArea>
           </DialogContent>
         </Dialog>
+
+        {/* Battle Pass Management */}
+        <Card className="mb-8 border-primary/50 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Flame className="w-5 h-5" />
+              Manage Battle Pass
+            </CardTitle>
+            <CardDescription>Assign cosmetics and games to battle pass tiers (1-50)</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-4">
+              <label className="text-sm font-semibold">Season:</label>
+              <Select value={battlePassSeason.toString()} onValueChange={(v) => setBattlePassSeason(parseInt(v))}>
+                <SelectTrigger className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5].map(s => (
+                    <SelectItem key={s} value={s.toString()}>Season {s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <ScrollArea className="h-96 w-full border rounded-md p-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {bpTiers.map((tier, idx) => (
+                  <Dialog key={tier.id} open={selectedTierIndex === idx} onOpenChange={(open) => setSelectedTierIndex(open ? idx : null)}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="text-xs h-auto py-2" data-testid={`button-tier-${tier.tier}`}>
+                        <div className="text-center w-full">
+                          <p className="font-bold">Tier {tier.tier}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {(tier.freeCosmeticId || tier.freeGameId) ? "Free" : "Empty"}
+                          </p>
+                        </div>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Edit Tier {tier.tier}</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-semibold block mb-2">Free Cosmetic</label>
+                          <Select defaultValue={tier.freeCosmeticId || ""} onValueChange={(val) => {}}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="None" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">None</SelectItem>
+                              {bpCosmetics.map(c => (
+                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold block mb-2">Premium Cosmetic</label>
+                          <Select defaultValue={tier.premiumCosmeticId || ""} onValueChange={(val) => {}}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="None" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">None</SelectItem>
+                              {bpCosmetics.map(c => (
+                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold block mb-2">Free Game</label>
+                          <Select defaultValue={tier.freeGameId || ""} onValueChange={(val) => {}}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="None" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">None</SelectItem>
+                              {allGames.map(g => (
+                                <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold block mb-2">Premium Game</label>
+                          <Select defaultValue={tier.premiumGameId || ""} onValueChange={(val) => {}}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="None" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">None</SelectItem>
+                              {allGames.map(g => (
+                                <SelectItem key={g.id} value={g.id}>{g.title}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button onClick={() => {
+                          const freeC = (document.querySelector('div:nth-child(1) [role="combobox"]') as HTMLElement)?.textContent?.includes("None") ? undefined : tier.freeCosmeticId;
+                          const premC = (document.querySelector('div:nth-child(2) [role="combobox"]') as HTMLElement)?.textContent?.includes("None") ? undefined : tier.premiumCosmeticId;
+                          const freeG = (document.querySelector('div:nth-child(3) [role="combobox"]') as HTMLElement)?.textContent?.includes("None") ? undefined : tier.freeGameId;
+                          const premG = (document.querySelector('div:nth-child(4) [role="combobox"]') as HTMLElement)?.textContent?.includes("None") ? undefined : tier.premiumGameId;
+                          updateTierMutation.mutate({ tierId: tier.id, freeCosmeticId: freeC, premiumCosmeticId: premC, freeGameId: freeG, premiumGameId: premG });
+                        }} disabled={updateTierMutation.isPending} className="w-full" data-testid={`button-save-tier-${tier.tier}`}>Save Changes</Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
 
         {/* Active Theme & List */}
         <Card>
