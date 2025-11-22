@@ -8,8 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { AppTheme, Announcement } from "@shared/schema";
-import { Trash2, Plus, Send, ShoppingCart } from "lucide-react";
+import { Trash2, Plus, Send, ShoppingCart, Upload } from "lucide-react";
 import { generateThemeFromDescription } from "@/lib/theme-generator";
+import { UploadGameForm } from "@/components/upload-game-form";
 
 export default function AdminPanel() {
   const { toast } = useToast();
@@ -21,6 +22,8 @@ export default function AdminPanel() {
   const [cosmeticThemeName, setCosmeticThemeName] = useState("");
   const [cosmeticThemeDesc, setCosmeticThemeDesc] = useState("");
   const [cosmeticThemePrice, setCosmeticThemePrice] = useState(100);
+  const [premiumGamePrice, setPremiumGamePrice] = useState(50);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
@@ -166,6 +169,50 @@ export default function AdminPanel() {
         <h1 className="text-3xl font-bold mb-8" data-testid="heading-admin-panel">
           Admin Panel
         </h1>
+
+        {/* Upload Premium Game */}
+        <Card className="mb-8 border-primary/50 bg-primary/5">
+          <CardHeader>
+            <CardTitle>Upload Premium Game</CardTitle>
+            <CardDescription>Create a game that users can purchase with coins</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="button-open-premium-game-upload">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Premium Game
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Upload Premium Game</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-semibold block mb-2">Price (coins)</label>
+                    <Input
+                      type="number"
+                      placeholder="Price in coins (e.g., 50)"
+                      value={premiumGamePrice}
+                      onChange={(e) => setPremiumGamePrice(parseInt(e.target.value) || 0)}
+                      min={1}
+                      data-testid="input-premium-game-price"
+                    />
+                  </div>
+                  <UploadGameForm 
+                    onSuccess={() => {
+                      setUploadDialogOpen(false);
+                      setPremiumGamePrice(50);
+                    }}
+                    isPremium={true}
+                    premiumPrice={premiumGamePrice}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+          </CardContent>
+        </Card>
 
         {/* Site-wide Announcement */}
         <Card className="mb-8 border-primary/50 bg-primary/5">

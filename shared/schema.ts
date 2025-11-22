@@ -20,6 +20,7 @@ export const games = pgTable("games", {
   htmlPath: text("html_path").notNull(),
   gameType: text("game_type").default("html").notNull(), // 'html' or 'swf'
   createdBy: varchar("created_by").notNull(),
+  price: integer("price"), // null = free/public, number = premium price in coins
 });
 
 // Groups
@@ -98,6 +99,14 @@ export const gameDifficultyVotes = pgTable("game_difficulty_votes", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// User owned premium games
+export const userOwnedGames = pgTable("user_owned_games", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  gameId: varchar("game_id").notNull(),
+  purchasedAt: timestamp("purchased_at").defaultNow().notNull(),
+});
+
 // Cosmetic trades between users in the same group
 export const cosmeticTrades = pgTable("cosmetic_trades", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -151,6 +160,7 @@ export const announcements = pgTable("announcements", {
 
 // Schema definitions
 export const insertGameSchema = createInsertSchema(games).omit({ id: true });
+export const insertUserOwnedGameSchema = createInsertSchema(userOwnedGames).omit({ id: true, purchasedAt: true });
 export const insertGroupSchema = createInsertSchema(groups).omit({ id: true, createdAt: true });
 export const insertGroupGameSchema = createInsertSchema(groupGames).omit({ id: true, uploadedAt: true });
 export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true });
@@ -195,3 +205,5 @@ export type AppTheme = typeof appThemes.$inferSelect;
 export type InsertAppTheme = z.infer<typeof insertAppThemeSchema>;
 export type Announcement = typeof announcements.$inferSelect;
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
+export type UserOwnedGame = typeof userOwnedGames.$inferSelect;
+export type InsertUserOwnedGame = z.infer<typeof insertUserOwnedGameSchema>;

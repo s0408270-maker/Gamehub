@@ -22,9 +22,11 @@ type TitleFormData = z.infer<typeof uploadSchema>;
 
 interface UploadGameFormProps {
   onSuccess?: () => void;
+  isPremium?: boolean;
+  premiumPrice?: number;
 }
 
-export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
+export function UploadGameForm({ onSuccess, isPremium = false, premiumPrice = 0 }: UploadGameFormProps) {
   const [uploadMode, setUploadMode] = useState<"file" | "code">("file");
   const [gameFile, setGameFile] = useState<File | null>(null);
   const [gameFileName, setGameFileName] = useState<string>("");
@@ -59,6 +61,9 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
           formData.append("thumbnail", thumbnailFile);
         }
         formData.append("username", username);
+        if (isPremium && premiumPrice > 0) {
+          formData.append("price", premiumPrice.toString());
+        }
 
         const response = await fetch("/api/games/paste-code", {
           method: "POST",
@@ -81,6 +86,9 @@ export function UploadGameForm({ onSuccess }: UploadGameFormProps) {
           formData.append("thumbnail", thumbnailFile);
         }
         formData.append("username", username);
+        if (isPremium && premiumPrice > 0) {
+          formData.append("price", premiumPrice.toString());
+        }
 
         const response = await fetch("/api/games", {
           method: "POST",
