@@ -10,6 +10,48 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { AppTheme, Announcement } from "@shared/schema";
 import { Trash2, Plus, Send } from "lucide-react";
 
+const THEME_TEMPLATES = [
+  {
+    name: "Neon Cyberpunk",
+    cssOverrides: `--primary: 280 100% 50%;
+--primary-foreground: 0 0% 100%;
+--secondary: 180 100% 50%;
+--secondary-foreground: 0 0% 0%;
+--accent: 340 100% 50%;
+--accent-foreground: 0 0% 100%;
+--background: 250 30% 10%;
+--foreground: 270 100% 95%;
+--card: 250 30% 20%;
+--border: 280 100% 50%;`,
+  },
+  {
+    name: "Ocean Blue",
+    cssOverrides: `--primary: 200 100% 50%;
+--primary-foreground: 0 0% 100%;
+--secondary: 160 100% 50%;
+--secondary-foreground: 0 0% 0%;
+--accent: 30 100% 50%;
+--accent-foreground: 0 0% 0%;
+--background: 210 25% 15%;
+--foreground: 200 30% 95%;
+--card: 210 25% 25%;
+--border: 200 100% 50%;`,
+  },
+  {
+    name: "Forest Green",
+    cssOverrides: `--primary: 120 100% 50%;
+--primary-foreground: 0 0% 100%;
+--secondary: 160 100% 50%;
+--secondary-foreground: 0 0% 100%;
+--accent: 40 100% 50%;
+--accent-foreground: 0 0% 0%;
+--background: 140 30% 12%;
+--foreground: 100 30% 95%;
+--card: 140 30% 22%;
+--border: 120 100% 50%;`,
+  },
+];
+
 export default function AdminPanel() {
   const { toast } = useToast();
   const username = localStorage.getItem("username") || "";
@@ -17,7 +59,6 @@ export default function AdminPanel() {
   const [announcementMessage, setAnnouncementMessage] = useState("");
   const [customThemeName, setCustomThemeName] = useState("");
   const [customThemeCss, setCustomThemeCss] = useState("");
-  const [customThemeDesc, setCustomThemeDesc] = useState("");
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
@@ -195,42 +236,72 @@ export default function AdminPanel() {
           </CardContent>
         </Card>
 
-        {/* Create Theme from Description */}
+        {/* Theme Templates */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Generate Theme from Description</CardTitle>
-            <CardDescription>Describe your theme and AI will generate the colors for you</CardDescription>
+            <CardTitle>Theme Templates</CardTitle>
+            <CardDescription>Quick-add pre-made themes</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {THEME_TEMPLATES.map((template) => (
+              <div key={template.name} className="flex items-center justify-between p-3 border rounded-md">
+                <h3 className="font-semibold text-sm">{template.name}</h3>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    createThemeMutation.mutate({
+                      name: template.name,
+                      cssOverrides: template.cssOverrides,
+                      description: "",
+                    });
+                  }}
+                  disabled={createThemeMutation.isPending || themes.some(t => t.name === template.name)}
+                  data-testid={`button-add-template-${template.name.replace(/\s+/g, '-').toLowerCase()}`}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {themes.some(t => t.name === template.name) ? "Added" : "Add"}
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Create Custom Theme */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Create Custom Theme</CardTitle>
+            <CardDescription>Manually define your theme colors</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <Input
-              placeholder="Theme name (e.g., Dark Forest, Cyberpunk Neon)"
+              placeholder="Theme name (e.g., My Custom Theme)"
               value={customThemeName}
               onChange={(e) => setCustomThemeName(e.target.value)}
               data-testid="input-custom-theme-name"
             />
             <Textarea
-              placeholder="Describe your theme (e.g., Cool blues with neon accents, dark background, high contrast buttons)"
-              value={customThemeDesc}
-              onChange={(e) => setCustomThemeDesc(e.target.value)}
-              className="min-h-24"
-              data-testid="textarea-theme-description"
+              placeholder="Paste CSS variables (one per line)&#10;Example:&#10;--primary: 280 100% 50%;&#10;--background: 240 25% 10%;&#10;--foreground: 0 0% 95%;"
+              value={customThemeCss}
+              onChange={(e) => setCustomThemeCss(e.target.value)}
+              className="font-mono text-sm min-h-32"
+              data-testid="textarea-custom-theme-css"
             />
             <Button
               onClick={() => {
-                if (customThemeName && customThemeDesc) {
+                if (customThemeName && customThemeCss) {
                   createThemeMutation.mutate({
                     name: customThemeName,
-                    cssOverrides: "",
-                    description: customThemeDesc,
+                    cssOverrides: customThemeCss,
+                    description: "",
                   });
                 }
               }}
-              disabled={!customThemeName || !customThemeDesc || createThemeMutation.isPending}
+              disabled={!customThemeName || !customThemeCss || createThemeMutation.isPending}
               className="w-full"
-              data-testid="button-generate-theme"
+              data-testid="button-create-custom-theme"
             >
               <Plus className="w-4 h-4 mr-2" />
-              {createThemeMutation.isPending ? "Generating..." : "Generate Theme"}
+              Create Theme
             </Button>
           </CardContent>
         </Card>
