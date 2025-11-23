@@ -463,7 +463,7 @@ export class DatabaseStorage implements IStorage {
     const progress = await this.getUserBattlePassProgress(userId);
     const newExp = (progress.experience || 0) + amount;
     const expPerTier = 3000; // 50 xp/min * 60 min = 3000 xp per tier
-    const newTier = Math.min(40, progress.currentTier + Math.floor(newExp / expPerTier));
+    const newTier = Math.min(50, progress.currentTier + Math.floor(newExp / expPerTier));
     
     const result = await db.update(userBattlePassProgress)
       .set({ experience: newExp % expPerTier, currentTier: newTier })
@@ -482,7 +482,7 @@ export class DatabaseStorage implements IStorage {
 
   async setUserBattlePassTier(userId: string, tier: number): Promise<UserBattlePassProgress> {
     const result = await db.update(userBattlePassProgress)
-      .set({ currentTier: Math.min(40, Math.max(0, tier)) })
+      .set({ currentTier: Math.min(50, Math.max(0, tier)) })
       .where(eq(userBattlePassProgress.userId, userId))
       .returning();
     return result[0];
@@ -519,7 +519,7 @@ export class DatabaseStorage implements IStorage {
     
     if (existing.length === 0) {
       const tiers = [];
-      for (let tier = 1; tier <= 40; tier++) {
+      for (let tier = 1; tier <= 50; tier++) {
         tiers.push({
           season,
           tier,
