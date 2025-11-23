@@ -81,54 +81,73 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
     };
   }, [open, onClose]);
 
-  // Load game save on open
-  useEffect(() => {
-    if (!open || !username) return;
-
-    const loadSave = async () => {
+  // Load game save on iframe load
+  const handleIframeLoadWithSave = () => {
+    setLoading(false);
+    
+    // Wait for iframe to fully initialize, then restore localStorage
+    setTimeout(async () => {
       try {
+        const iframeEl = document.querySelector('iframe') as HTMLIFrameElement;
+        if (!iframeEl?.contentWindow || !username) return;
+
         const res = await fetch(`/api/games/${game.id}/load?username=${username}`);
         if (res.ok) {
           const data = await res.json();
           if (data.save?.saveData) {
-            const iframeEl = document.querySelector('iframe') as HTMLIFrameElement;
-            if (iframeEl?.contentWindow) {
-              iframeEl.contentWindow.postMessage({
-                type: "LOAD_GAME_STATE",
-                payload: JSON.parse(data.save.saveData),
-              }, "*");
+            const savedData = JSON.parse(data.save.saveData);
+            try {
+              // Restore all localStorage keys to the iframe
+              Object.keys(savedData).forEach((key) => {
+                iframeEl.contentWindow!.localStorage.setItem(key, savedData[key]);
+              });
+              console.log("Game progress restored from save");
+            } catch (e) {
+              console.log("Could not restore localStorage (CORS - this is normal)");
             }
           }
         }
       } catch (err) {
         console.error("Failed to load game save:", err);
       }
-    };
+    }, 1000);
+  };
 
-    setTimeout(loadSave, 500);
-  }, [open, game.id, username]);
-
-  // Save game state on close
+  // Save game state when modal closes
   useEffect(() => {
     return () => {
       if (open && username) {
-        const iframeEl = document.querySelector('iframe') as HTMLIFrameElement;
-        if (iframeEl?.contentWindow) {
-          iframeEl.contentWindow.postMessage({ type: "SAVE_GAME_STATE" }, "*");
-          setTimeout(() => {
-            window.addEventListener("message", (e) => {
-              if (e.data?.type === "GAME_STATE_READY" && e.data?.saveData) {
-                fetch(`/api/games/${game.id}/save`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    username,
-                    saveData: JSON.stringify(e.data.saveData),
-                  }),
-                });
+        try {
+          const iframeEl = document.querySelector('iframe') as HTMLIFrameElement;
+          if (!iframeEl?.contentWindow) return;
+
+          // Try to read all localStorage from iframe (may fail on CORS)
+          let gameData: Record<string, string> = {};
+          try {
+            for (let i = 0; i < iframeEl.contentWindow.localStorage.length; i++) {
+              const key = iframeEl.contentWindow.localStorage.key(i);
+              if (key) {
+                gameData[key] = iframeEl.contentWindow.localStorage.getItem(key) || "";
               }
-            }, { once: true });
-          }, 100);
+            }
+          } catch (e) {
+            console.log("Could not read iframe localStorage (CORS - this is normal)");
+            return;
+          }
+
+          // Save the data
+          if (Object.keys(gameData).length > 0) {
+            fetch(`/api/games/${game.id}/save`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                username,
+                saveData: JSON.stringify(gameData),
+              }),
+            }).catch(err => console.error("Failed to save game:", err));
+          }
+        } catch (err) {
+          console.error("Error saving game on close:", err);
         }
       }
     };
@@ -223,9 +242,8 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
     detectExternalContent();
   }, [open, game.id, gameType]);
 
-  const handleIframeLoad = () => {
-    setLoading(false);
-  };
+  // Use combined handler that loads save + finishes loading
+  const handleIframeLoad = handleIframeLoadWithSave;
 
   const handleIframeError = () => {
     setLoading(false);
