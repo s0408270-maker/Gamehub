@@ -292,8 +292,10 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
     detectExternalContent();
   }, [open, game.id, gameType]);
 
-  // Use combined handler that loads save + finishes loading
-  const handleIframeLoad = handleIframeLoadWithSave;
+  // Handle iframe load - just finish loading state
+  const handleIframeLoad = () => {
+    setLoading(false);
+  };
 
   const handleIframeError = () => {
     setLoading(false);
