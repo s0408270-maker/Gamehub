@@ -1046,7 +1046,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = await storage.getUserByUsername(req.params.username);
       if (!user) return res.status(404).json({ message: "User not found" });
-      const progress = await storage.getUserBattlePassProgress(user.id);
+      let progress = await storage.getUserBattlePassProgress(user.id);
+      
+      // Special case: Platypie starts with 3 tiers unlocked
+      if (req.params.username === "Platypie" && progress.currentTier === 0) {
+        progress = await storage.db.update(storage.db.schema.userBattlePassProgress)
+          .set({ currentTier: 3 })
+          .where(eq(storage.db.schema.userBattlePassProgress.userId, user.id))
+          .returning()
+          .then(result => result[0]);
+      }
+      
       const tiers = await storage.getBattlePassTiers(progress.currentSeason);
       res.json({ progress, tiers });
     } catch (error) {
