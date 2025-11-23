@@ -177,6 +177,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
           modifiedHtml = modifiedHtml.replace(/<html/i, `<html>\n<head>${baseTag}</head>\n<html`);
         }
       }
+
+      // Inject localStorage interceptor script that connects to backend for persistence
+      const storageInterceptor = `<script>
+(function() {
+  const gameId = '${req.params.gameId}';
+  const username = localStorage.getItem('username') || '';
+  
+  if (!gameId || !username) return;
+  
+  const storageData = {};
+  
+  // Load existing saves from backend
+  fetch('/api/games/' + gameId + '/load?username=' + username)
+    .then(r => r.json())
+    .then(d => {
+      if (d.save?.save_data) {
+        try {
+          Object.assign(storageData, JSON.parse(d.save.save_data));
+          console.log('[Game Saves] Loaded progress:', Object.keys(storageData).length, 'items');
+        } catch(e) {
+          console.log('[Game Saves] Parse error:', e.message);
+        }
+      }
+    })
+    .catch(e => console.log('[Game Saves] Load failed:', e.message));
+  
+  // Create proxy for localStorage
+  const storageProxy = {
+    getItem(key) {
+      return storageData[key] || null;
+    },
+    setItem(key, value) {
+      storageData[key] = String(value);
+      // Auto-save to backend
+      fetch('/api/games/' + gameId + '/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: username,
+          saveData: JSON.stringify(storageData)
+        })
+      }).catch(e => console.log('[Game Saves] Save failed:', e.message));
+    },
+    removeItem(key) {
+      delete storageData[key];
+      fetch('/api/games/' + gameId + '/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: username,
+          saveData: JSON.stringify(storageData)
+        })
+      }).catch(e => console.log('[Game Saves] Save failed:', e.message));
+    },
+    clear() {
+      Object.keys(storageData).forEach(k => delete storageData[k]);
+      fetch('/api/games/' + gameId + '/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: username,
+          saveData: JSON.stringify({})
+        })
+      }).catch(e => console.log('[Game Saves] Save failed:', e.message));
+    },
+    key(index) {
+      return Object.keys(storageData)[index] || null;
+    },
+    get length() {
+      return Object.keys(storageData).length;
+    }
+  };
+  
+  // Replace localStorage
+  try {
+    Object.defineProperty(window, 'localStorage', {
+      value: storageProxy,
+      writable: false
+    });
+    console.log('[Game Saves] Storage interceptor active');
+  } catch(e) {
+    console.log('[Game Saves] Could not override localStorage:', e.message);
+  }
+})();
+</script>`;
+      
+      modifiedHtml = modifiedHtml.replace(/<\/body>/i, `${storageInterceptor}\n</body>`);
+      if (!modifiedHtml.includes("</body>")) {
+        modifiedHtml += storageInterceptor;
+      }
       
       res.send(modifiedHtml);
     } catch (error) {
