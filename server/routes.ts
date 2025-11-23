@@ -1050,11 +1050,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Special case: Platypie starts with 3 tiers unlocked
       if (req.params.username === "Platypie" && progress.currentTier === 0) {
-        progress = await storage.db.update(storage.db.schema.userBattlePassProgress)
-          .set({ currentTier: 3 })
-          .where(eq(storage.db.schema.userBattlePassProgress.userId, user.id))
-          .returning()
-          .then(result => result[0]);
+        progress = await storage.setUserBattlePassTier(user.id, 3);
       }
       
       const tiers = await storage.getBattlePassTiers(progress.currentSeason);
