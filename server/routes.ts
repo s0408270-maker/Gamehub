@@ -178,72 +178,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Inject localStorage interceptor script that connects to backend for persistence
+      // Inject storage proxy that communicates with parent via postMessage
       const storageInterceptor = `<script>
 (function() {
   const gameId = '${req.params.gameId}';
-  const username = localStorage.getItem('username') || '';
+  let storageData = {};
+  let isReady = false;
   
-  if (!gameId || !username) return;
-  
-  const storageData = {};
-  
-  // Load existing saves from backend
-  fetch('/api/games/' + gameId + '/load?username=' + username)
-    .then(r => r.json())
-    .then(d => {
-      if (d.save?.save_data) {
-        try {
-          Object.assign(storageData, JSON.parse(d.save.save_data));
-          console.log('[Game Saves] Loaded progress:', Object.keys(storageData).length, 'items');
-        } catch(e) {
-          console.log('[Game Saves] Parse error:', e.message);
-        }
+  // Listen for messages from parent (initial save data and confirmations)
+  window.addEventListener('message', (e) => {
+    if (e.data.type === 'GAME_SAVE_DATA') {
+      if (e.data.data) {
+        storageData = {...e.data.data};
+        isReady = true;
       }
-    })
-    .catch(e => console.log('[Game Saves] Load failed:', e.message));
+    }
+  });
   
-  // Create proxy for localStorage
+  // Create localStorage proxy
   const storageProxy = {
     getItem(key) {
       return storageData[key] || null;
     },
     setItem(key, value) {
       storageData[key] = String(value);
-      // Auto-save to backend
-      fetch('/api/games/' + gameId + '/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: username,
-          saveData: JSON.stringify(storageData)
-        })
-      }).catch(e => console.log('[Game Saves] Save failed:', e.message));
+      // Send to parent for saving
+      window.parent.postMessage({
+        type: 'GAME_STATE_CHANGE',
+        gameId: gameId,
+        saveData: storageData
+      }, '*');
     },
     removeItem(key) {
       delete storageData[key];
-      fetch('/api/games/' + gameId + '/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: username,
-          saveData: JSON.stringify(storageData)
-        })
-      }).catch(e => console.log('[Game Saves] Save failed:', e.message));
+      window.parent.postMessage({
+        type: 'GAME_STATE_CHANGE',
+        gameId: gameId,
+        saveData: storageData
+      }, '*');
     },
     clear() {
-      Object.keys(storageData).forEach(k => delete storageData[k]);
-      fetch('/api/games/' + gameId + '/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: username,
-          saveData: JSON.stringify({})
-        })
-      }).catch(e => console.log('[Game Saves] Save failed:', e.message));
+      storageData = {};
+      window.parent.postMessage({
+        type: 'GAME_STATE_CHANGE',
+        gameId: gameId,
+        saveData: storageData
+      }, '*');
     },
     key(index) {
-      return Object.keys(storageData)[index] || null;
+      const keys = Object.keys(storageData);
+      return keys[index] || null;
     },
     get length() {
       return Object.keys(storageData).length;
@@ -251,15 +235,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
   
   // Replace localStorage
-  try {
-    Object.defineProperty(window, 'localStorage', {
-      value: storageProxy,
-      writable: false
-    });
-    console.log('[Game Saves] Storage interceptor active');
-  } catch(e) {
-    console.log('[Game Saves] Could not override localStorage:', e.message);
-  }
+  Object.defineProperty(window, 'localStorage', {
+    value: storageProxy,
+    writable: false,
+    configurable: false
+  });
+  
+  // Request save data from parent
+  window.parent.postMessage({
+    type: 'REQUEST_SAVE_DATA',
+    gameId: gameId
+  }, '*');
+  
+  console.log('[GameSaves] Interceptor ready');
 })();
 </script>`;
       

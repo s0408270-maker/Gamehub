@@ -157,76 +157,50 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
     };
   }, [open, onClose]);
 
-  // Load game save on iframe load
-  const handleIframeLoadWithSave = () => {
-    setLoading(false);
-    
-    // Wait for iframe to fully initialize, then restore localStorage
-    setTimeout(async () => {
-      try {
-        const iframeEl = document.querySelector('iframe') as HTMLIFrameElement;
-        if (!iframeEl?.contentWindow || !username) return;
-
-        const res = await fetch(`/api/games/${game.id}/load?username=${username}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.save?.saveData) {
-            const savedData = JSON.parse(data.save.saveData);
-            try {
-              // Restore all localStorage keys to the iframe
-              Object.keys(savedData).forEach((key) => {
-                iframeEl.contentWindow!.localStorage.setItem(key, savedData[key]);
-              });
-              console.log("Game progress restored from save");
-            } catch (e) {
-              console.log("Could not restore localStorage (CORS - this is normal)");
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load game save:", err);
-      }
-    }, 1000);
-  };
-
-  // Save game state when modal closes
+  // Listen for game state changes from iframe
   useEffect(() => {
-    return () => {
-      if (open && username) {
+    if (!open || !username) return;
+
+    const handleMessage = async (e: MessageEvent) => {
+      // REQUEST_SAVE_DATA - game asks for saved data
+      if (e.data?.type === "REQUEST_SAVE_DATA" && e.data?.gameId === game.id) {
         try {
-          const iframeEl = document.querySelector('iframe') as HTMLIFrameElement;
-          if (!iframeEl?.contentWindow) return;
-
-          // Try to read all localStorage from iframe (may fail on CORS)
-          let gameData: Record<string, string> = {};
-          try {
-            for (let i = 0; i < iframeEl.contentWindow.localStorage.length; i++) {
-              const key = iframeEl.contentWindow.localStorage.key(i);
-              if (key) {
-                gameData[key] = iframeEl.contentWindow.localStorage.getItem(key) || "";
-              }
+          const res = await fetch(`/api/games/${game.id}/load?username=${username}`);
+          if (res.ok) {
+            const data = await res.json();
+            const saveData = data.save?.save_data ? JSON.parse(data.save.save_data) : {};
+            const iframe = document.querySelector("iframe") as HTMLIFrameElement;
+            if (iframe?.contentWindow) {
+              iframe.contentWindow.postMessage(
+                { type: "GAME_SAVE_DATA", data: saveData },
+                "*"
+              );
             }
-          } catch (e) {
-            console.log("Could not read iframe localStorage (CORS - this is normal)");
-            return;
-          }
-
-          // Save the data
-          if (Object.keys(gameData).length > 0) {
-            fetch(`/api/games/${game.id}/save`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                username,
-                saveData: JSON.stringify(gameData),
-              }),
-            }).catch(err => console.error("Failed to save game:", err));
           }
         } catch (err) {
-          console.error("Error saving game on close:", err);
+          console.error("Failed to load save data:", err);
+        }
+      }
+
+      // GAME_STATE_CHANGE - game sends updated state
+      if (e.data?.type === "GAME_STATE_CHANGE" && e.data?.gameId === game.id) {
+        try {
+          await fetch(`/api/games/${game.id}/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username,
+              saveData: JSON.stringify(e.data.saveData || {}),
+            }),
+          });
+        } catch (err) {
+          console.error("Failed to save game state:", err);
         }
       }
     };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
   }, [open, game.id, username]);
 
   // Track coins while playing - award 5 coins per minute
