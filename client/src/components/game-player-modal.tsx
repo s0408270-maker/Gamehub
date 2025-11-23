@@ -146,6 +146,44 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
     }
   };
 
+  // Track play session for XP earning
+  useEffect(() => {
+    if (!open || !username) return;
+
+    const startSession = async () => {
+      try {
+        await fetch(`/api/games/${game.id}/play-start`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username }),
+        });
+      } catch (err) {
+        console.error("Failed to start play session:", err);
+      }
+    };
+
+    const endSession = async () => {
+      try {
+        const response = await fetch(`/api/games/${game.id}/play-end`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          toast({ title: "Session Ended", description: `Earned ${data.xpEarned} XP and ${data.coinsEarned} coins!` });
+        }
+      } catch (err) {
+        console.error("Failed to end play session:", err);
+      }
+    };
+
+    startSession();
+    return () => {
+      endSession();
+    };
+  }, [open, username, game.id, toast]);
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
