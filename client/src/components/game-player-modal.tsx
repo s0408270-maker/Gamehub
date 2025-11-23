@@ -97,7 +97,9 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
   
   // Check if game.htmlPath is a URL (external game) or local file
   const isExternalUrl = game.htmlPath.startsWith("http://") || game.htmlPath.startsWith("https://");
-  const initialGameUrl = isExternalUrl ? game.htmlPath : `/api/play/${game.id}?username=${username}`;
+  const initialGameUrl = isExternalUrl 
+    ? `/api/games/proxy-url?url=${encodeURIComponent(game.htmlPath)}` 
+    : `/api/play/${game.id}?username=${username}`;
   
   const [loading, setLoading] = useState(true);
   const [gameUrl, setGameUrl] = useState<string>(initialGameUrl);
