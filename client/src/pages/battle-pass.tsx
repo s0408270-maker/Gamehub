@@ -13,6 +13,10 @@ export default function BattlePass() {
   const { toast } = useToast();
   const username = localStorage.getItem("username") || "";
 
+  const { data: userData } = useQuery<{ role: string }>({
+    queryKey: [`/api/user/${username}`],
+  });
+
   const { data: battlePassData, isLoading } = useQuery<{
     progress: { currentSeason: number; currentTier: number; experience: number; hasPremiumPass: string };
     tiers: unknown[];
@@ -20,6 +24,8 @@ export default function BattlePass() {
   }>({
     queryKey: [`/api/battlepass/${username}`],
   });
+
+  const isOwner = userData?.role === "owner";
 
   const changeSeasonMutation = useMutation({
     mutationFn: async (season: number) => {
@@ -101,18 +107,20 @@ export default function BattlePass() {
             <h1 className="text-4xl font-bold">Battle Pass</h1>
           </div>
           <div className="flex items-center gap-4">
-            <Select value={String(progress.currentSeason)} onValueChange={(value) => changeSeasonMutation.mutate(parseInt(value))}>
-              <SelectTrigger className="w-40" data-testid="select-season">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((season) => (
-                  <SelectItem key={season} value={String(season)} data-testid={`option-season-${season}`}>
-                    Season {season}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {isOwner && (
+              <Select value={String(progress.currentSeason)} onValueChange={(value) => changeSeasonMutation.mutate(parseInt(value))}>
+                <SelectTrigger className="w-40" data-testid="select-season">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((season) => (
+                    <SelectItem key={season} value={String(season)} data-testid={`option-season-${season}`}>
+                      Season {season}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
 
