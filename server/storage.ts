@@ -100,6 +100,9 @@ export interface IStorage {
   // Tier rewards
   claimTierReward(userId: string, tierId: string, season: number): Promise<ClaimedTierReward>;
   getClaimedTierRewards(userId: string, season: number): Promise<ClaimedTierReward[]>;
+
+  // Season management
+  changeUserBattlePassSeason(userId: string, season: number): Promise<UserBattlePassProgress>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -488,6 +491,14 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async changeUserBattlePassSeason(userId: string, season: number): Promise<UserBattlePassProgress> {
+    const result = await db.update(userBattlePassProgress)
+      .set({ currentSeason: season, currentTier: 0, experience: 0 })
+      .where(eq(userBattlePassProgress.userId, userId))
+      .returning();
+    return result[0];
+  }
+
   async claimTierReward(userId: string, tierId: string, season: number): Promise<ClaimedTierReward> {
     const result = await db.insert(claimedTierRewards)
       .values({ userId, tierId, season })
@@ -530,6 +541,13 @@ export class DatabaseStorage implements IStorage {
         });
       }
       await db.insert(battlePassTiers).values(tiers as any);
+    }
+  }
+
+  async ensureAllSeasonTiersExist(): Promise<void> {
+    // Create tiers for seasons 1-11
+    for (let season = 1; season <= 11; season++) {
+      await this.ensureBattlePassTiersExist(season);
     }
   }
 

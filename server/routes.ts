@@ -1050,8 +1050,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) return res.status(404).json({ message: "User not found" });
       let progress = await storage.getUserBattlePassProgress(user.id);
       
-      // Ensure all battle pass tiers exist for this season
-      await storage.ensureBattlePassTiersExist(progress.currentSeason);
+      // Ensure all battle pass tiers exist for all seasons
+      await storage.ensureAllSeasonTiersExist();
       
       // Special case: Platypie starts with 3 tiers unlocked
       if (req.params.username === "Platypie" && progress.currentTier === 0) {
@@ -1066,6 +1066,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching battle pass:", error);
       res.status(500).json({ message: "Failed to fetch battle pass" });
+    }
+  });
+
+  app.post("/api/battlepass/:username/change-season", async (req, res) => {
+    try {
+      const { season } = req.body;
+      if (!season || season < 1 || season > 11) {
+        return res.status(400).json({ message: "Invalid season (1-11)" });
+      }
+      
+      const user = await storage.getUserByUsername(req.params.username);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      
+      // Ensure tiers exist for the new season
+      await storage.ensureBattlePassTiersExist(season);
+      
+      // Change the user's season (resets tier and experience to 0)
+      const newProgress = await storage.changeUserBattlePassSeason(user.id, season);
+      
+      res.json({ message: "Season changed successfully", progress: newProgress });
+    } catch (error) {
+      console.error("Error changing season:", error);
+      res.status(500).json({ message: "Failed to change season: " + error });
     }
   });
 
