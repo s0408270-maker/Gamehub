@@ -1054,10 +1054,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const tiers = await storage.getBattlePassTiers(progress.currentSeason);
-      res.json({ progress, tiers });
+      const claimedRewards = await storage.getClaimedTierRewards(user.id, progress.currentSeason);
+      const claimedTierIds = new Set(claimedRewards.map(r => r.tierId));
+      
+      res.json({ progress, tiers, claimedRewards: claimedTierIds });
     } catch (error) {
       console.error("Error fetching battle pass:", error);
       res.status(500).json({ message: "Failed to fetch battle pass" });
+    }
+  });
+
+  app.post("/api/battlepass/:username/claim-reward", async (req, res) => {
+    try {
+      const { tierId, season } = req.body;
+      const user = await storage.getUserByUsername(req.params.username);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      
+      const tier = await storage.getGame(tierId); // Get tier details by ID
+      if (!tier) {
+        // Fetch the tier from database directly
+        const tierResult = await db.select().from(battlePassTiers).where(eq(battlePassTiers.id, tierId)).limit(1);
+        if (!tierResult[0]) return res.status(404).json({ message: "Tier not found" });
+      }
+      
+      // Claim the reward
+      await storage.claimTierReward(user.id, tierId, season);
+      
+      res.json({ message: "Reward claimed successfully" });
+    } catch (error) {
+      console.error("Error claiming reward:", error);
+      res.status(500).json({ message: "Failed to claim reward: " + error });
     }
   });
 

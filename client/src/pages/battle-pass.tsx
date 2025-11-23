@@ -15,8 +15,22 @@ export default function BattlePass() {
   const { data: battlePassData, isLoading } = useQuery<{
     progress: { currentSeason: number; currentTier: number; experience: number; hasPremiumPass: string };
     tiers: unknown[];
+    claimedRewards: Set<string>;
   }>({
     queryKey: [`/api/battlepass/${username}`],
+  });
+
+  const claimRewardMutation = useMutation({
+    mutationFn: async ({ tierId, season }: { tierId: string; season: number }) => {
+      return await apiRequest("POST", `/api/battlepass/${username}/claim-reward`, { tierId, season });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/battlepass/${username}`] });
+      toast({ title: "Success", description: "Reward claimed!" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error?.message || "Failed to claim reward", variant: "destructive" });
+    },
   });
 
   const purchaseMutation = useMutation({
@@ -112,25 +126,42 @@ export default function BattlePass() {
         {/* Tiers Grid */}
         <h2 className="text-2xl font-bold mb-4">Rewards</h2>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-          {Array.from({ length: 50 }).map((_, i) => {
-            const tierNum = i + 1;
+          {(battlePassData?.tiers || []).map((tier: any) => {
+            const tierNum = tier.tier;
             const isReached = progress.currentTier >= tierNum;
             const isCurrent = progress.currentTier === tierNum;
+            const isClaimed = battlePassData.claimedRewards?.has(tier.id) || false;
 
             return (
               <Card
                 key={tierNum}
-                className={`text-center cursor-pointer transition-all ${
+                className={`text-center transition-all ${
                   isReached ? "bg-primary/10" : "opacity-50"
                 } ${isCurrent ? "ring-2 ring-primary" : ""}`}
                 data-testid={`card-tier-${tierNum}`}
               >
-                <CardContent className="p-3 text-center">
-                  <div className="text-xs font-bold mb-2">Tier {tierNum}</div>
+                <CardContent className="p-3 flex flex-col gap-2">
+                  <div className="text-xs font-bold">Tier {tierNum}</div>
                   {isReached ? (
                     <Star className="w-6 h-6 text-yellow-500 mx-auto" />
                   ) : (
                     <Lock className="w-6 h-6 text-muted-foreground mx-auto" />
+                  )}
+                  {isReached && !isClaimed && (
+                    <Button 
+                      size="sm" 
+                      variant="default"
+                      onClick={() => claimRewardMutation.mutate({ tierId: tier.id, season: progress.currentSeason })}
+                      disabled={claimRewardMutation.isPending}
+                      data-testid={`button-claim-tier-${tierNum}`}
+                    >
+                      {claimRewardMutation.isPending ? "Claiming..." : "Collect"}
+                    </Button>
+                  )}
+                  {isClaimed && (
+                    <Badge variant="secondary" className="text-xs">
+                      Claimed
+                    </Badge>
                   )}
                 </CardContent>
               </Card>
