@@ -1082,7 +1082,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const session = gamePlayingSessions.get(user.id);
       
-      // If no session in memory, award minimum 1 minute worth of XP (15 XP)
+      // If no session in memory, award minimum 1 minute worth of XP (50 XP)
       // This handles server restarts and missing session data
       let playTimeMinutes = 1;
       if (session) {
@@ -1090,7 +1090,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         gamePlayingSessions.delete(user.id);
       }
       
-      const xpEarned = playTimeMinutes * 15;
+      const xpEarned = playTimeMinutes * 50;
       
       await storage.addBattlePassExperience(user.id, xpEarned);
       await storage.addCoins(user.id, xpEarned);
