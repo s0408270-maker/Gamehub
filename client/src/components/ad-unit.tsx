@@ -4,7 +4,8 @@ export function DisplayAdUnit() {
   useEffect(() => {
     // Push the ad to display
     try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
+      const w = window as any;
+      (w.adsbygoogle = w.adsbygoogle || []).push({});
     } catch (err) {
       console.log("AdSense not ready yet");
     }
