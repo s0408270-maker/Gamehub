@@ -1053,11 +1053,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Ensure all battle pass tiers exist for all seasons
       await storage.ensureAllSeasonTiersExist();
       
-      // Special case: Platypie starts with 3 tiers unlocked
-      if (req.params.username === "Platypie" && progress.currentTier === 0) {
-        progress = await storage.setUserBattlePassTier(user.id, 3);
-      }
-      
       const tiers = await storage.getBattlePassTiers(progress.currentSeason);
       const claimedRewards = await storage.getClaimedTierRewards(user.id, progress.currentSeason);
       const claimedTierIds = claimedRewards.map(r => r.tierId);

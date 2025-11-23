@@ -107,6 +107,9 @@ export default function BattlePass() {
             <h1 className="text-4xl font-bold">Battle Pass</h1>
           </div>
           <div className="flex items-center gap-4">
+            <Badge variant="default" className="text-lg px-4 py-2" data-testid="badge-season">
+              Season {progress.currentSeason}
+            </Badge>
             {isOwner && (
               <Select value={String(progress.currentSeason)} onValueChange={(value) => changeSeasonMutation.mutate(parseInt(value))}>
                 <SelectTrigger className="w-40" data-testid="select-season">
