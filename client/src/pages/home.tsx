@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Upload, Play, Gamepad2, Github, Twitter, Mail, Trash2 } from "lucide-react";
+import { Upload, Play, Gamepad2, Github, Twitter, Mail, Trash2, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { UploadGameForm } from "@/components/upload-game-form";
 import { GamePlayerModal } from "@/components/game-player-modal";
+import { URLGamePlayer } from "@/components/url-game-player";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -16,6 +17,7 @@ import heroImage from "@assets/generated_images/gaming_portal_hero_background.pn
 export default function Home() {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [urlGamePlayerOpen, setUrlGamePlayerOpen] = useState(false);
   const { toast } = useToast();
   const username = localStorage.getItem("username") || "";
 
@@ -62,6 +64,16 @@ export default function Home() {
                 <UploadGameForm onSuccess={() => setUploadDialogOpen(false)} />
               </DialogContent>
             </Dialog>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="sm:size-auto" 
+              onClick={() => setUrlGamePlayerOpen(true)}
+              data-testid="button-play-url-nav"
+            >
+              <Link2 className="w-4 h-4" />
+              <span className="hidden sm:inline ml-2">Play URL</span>
+            </Button>
             <ThemeToggle />
           </div>
         </div>
@@ -232,6 +244,9 @@ export default function Home() {
           onClose={() => setSelectedGame(null)}
         />
       )}
+
+      {/* URL Game Player Modal */}
+      <URLGamePlayer open={urlGamePlayerOpen} onOpenChange={setUrlGamePlayerOpen} />
 
       {/* Footer */}
       <footer className="border-t border-border bg-card/50 mt-auto">
