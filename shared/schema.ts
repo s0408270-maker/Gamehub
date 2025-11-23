@@ -166,6 +166,15 @@ export const announcements = pgTable("announcements", {
   isActive: text("is_active").default("true").notNull(), // 'true' or 'false'
 });
 
+// Game saves - save game state per user per game
+export const gameSaves = pgTable("game_saves", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  gameId: varchar("game_id").notNull(),
+  saveData: text("save_data").notNull(), // JSON stringified save state
+  savedAt: timestamp("saved_at").defaultNow().notNull(),
+});
+
 // Schema definitions
 export const insertGameSchema = createInsertSchema(games).omit({ id: true });
 export const insertUserOwnedGameSchema = createInsertSchema(userOwnedGames).omit({ id: true, purchasedAt: true });
@@ -182,6 +191,7 @@ export const insertBattlePassTierSchema = createInsertSchema(battlePassTiers).om
 export const insertUserBattlePassProgressSchema = createInsertSchema(userBattlePassProgress).omit({ id: true });
 export const insertAppThemeSchema = createInsertSchema(appThemes).omit({ id: true, createdAt: true });
 export const insertAnnouncementSchema = createInsertSchema(announcements).omit({ id: true, createdAt: true });
+export const insertGameSaveSchema = createInsertSchema(gameSaves).omit({ id: true, savedAt: true });
 
 // Types
 export type Game = typeof games.$inferSelect;
@@ -215,3 +225,5 @@ export type Announcement = typeof announcements.$inferSelect;
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 export type UserOwnedGame = typeof userOwnedGames.$inferSelect;
 export type InsertUserOwnedGame = z.infer<typeof insertUserOwnedGameSchema>;
+export type GameSave = typeof gameSaves.$inferSelect;
+export type InsertGameSave = z.infer<typeof insertGameSaveSchema>;
