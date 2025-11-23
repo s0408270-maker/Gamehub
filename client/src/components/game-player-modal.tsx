@@ -94,8 +94,13 @@ interface GamePlayerModalProps {
 
 export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
   const username = localStorage.getItem("username") || "";
+  
+  // Check if game.htmlPath is a URL (external game) or local file
+  const isExternalUrl = game.htmlPath.startsWith("http://") || game.htmlPath.startsWith("https://");
+  const initialGameUrl = isExternalUrl ? game.htmlPath : `/api/play/${game.id}?username=${username}`;
+  
   const [loading, setLoading] = useState(true);
-  const [gameUrl, setGameUrl] = useState<string>(`/api/play/${game.id}?username=${username}`);
+  const [gameUrl, setGameUrl] = useState<string>(initialGameUrl);
   const [difficulty, setDifficulty] = useState<string>("");
   const [avgDifficulty, setAvgDifficulty] = useState<number>(0);
   const [loadError, setLoadError] = useState<string>("");
@@ -194,6 +199,12 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
       return;
     }
 
+    // If the game URL is already an external URL, skip detection and load directly
+    if (isExternalUrl) {
+      setLoading(false);
+      return;
+    }
+
     const detectExternalContent = async () => {
       try {
         const response = await fetch(`/api/play/${game.id}`);
@@ -245,7 +256,7 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
     };
 
     detectExternalContent();
-  }, [open, game.id, gameType]);
+  }, [open, game.id, gameType, isExternalUrl]);
 
   // Handle iframe load - just finish loading state
   const handleIframeLoad = () => {
