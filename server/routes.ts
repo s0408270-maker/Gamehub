@@ -181,68 +181,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Extract username from query string
       const username = req.query.username as string;
       
-      // Inject storage proxy that makes direct API calls to backend
-      const storageInterceptor = `<script>
+      // Inject storage proxy that makes direct API calls to backend - MUST run in HEAD before game loads
+      const gameId = req.params.gameId;
+      const storageInterceptor = `<script type="text/javascript">
 (function() {
-  const gameId = '${req.params.gameId}';
-  const username = '${username || ''}';
-  let storageData = {};
-  let saveTimeout;
-  
-  if (!gameId || !username) return;
-  
-  // Load previous save
-  fetch('/api/games/' + gameId + '/load?username=' + username)
-    .then(r => r.json())
-    .then(d => {
-      if (d.save?.save_data) {
-        storageData = JSON.parse(d.save.save_data);
-        console.log('[GameSaves] Loaded');
-      }
-    })
-    .catch(e => console.log('[GameSaves] Load error:', e.message));
-  
-  // Auto-save function
-  const autoSave = () => {
-    fetch('/api/games/' + gameId + '/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, saveData: JSON.stringify(storageData) })
-    }).catch(e => console.log('[GameSaves] Save error:', e.message));
+  window.__GAME_SAVE_CONFIG = {
+    gameId: '${gameId}',
+    username: '${username || ''}',
+    storageData: {},
+    saveTimeout: null
   };
   
-  // Create localStorage proxy that auto-saves
-  Object.defineProperty(window, 'localStorage', {
-    value: {
-      getItem(key) { return storageData[key] || null; },
-      setItem(key, value) {
-        storageData[key] = String(value);
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(autoSave, 500);
-      },
-      removeItem(key) {
-        delete storageData[key];
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(autoSave, 500);
-      },
-      clear() {
-        storageData = {};
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(autoSave, 500);
-      },
-      key(i) { return Object.keys(storageData)[i] || null; },
-      get length() { return Object.keys(storageData).length; }
+  const cfg = window.__GAME_SAVE_CONFIG;
+  if (!cfg.gameId || !cfg.username) {
+    console.error('[GameSaves] Missing gameId or username');
+    return;
+  }
+  
+  // Load previous save immediately
+  try {
+    fetch('/api/games/' + cfg.gameId + '/load?username=' + encodeURIComponent(cfg.username))
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.save && d.save.save_data) {
+          cfg.storageData = JSON.parse(d.save.save_data);
+          console.log('[GameSaves] Loaded', Object.keys(cfg.storageData).length, 'keys');
+        }
+      })
+      .catch(e => console.log('[GameSaves] Load error:', e));
+  } catch (e) {
+    console.log('[GameSaves] Load exception:', e);
+  }
+  
+  // Auto-save function with error handling
+  const autoSave = () => {
+    try {
+      fetch('/api/games/' + cfg.gameId + '/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          username: cfg.username,
+          saveData: JSON.stringify(cfg.storageData)
+        })
+      }).catch(e => console.log('[GameSaves] Fetch error:', e));
+    } catch (e) {
+      console.log('[GameSaves] Save exception:', e);
+    }
+  };
+  
+  // Override localStorage IMMEDIATELY before any game code
+  window.localStorage = {
+    getItem: function(key) { return cfg.storageData[key] || null; },
+    setItem: function(key, value) {
+      cfg.storageData[key] = String(value);
+      clearTimeout(cfg.saveTimeout);
+      cfg.saveTimeout = setTimeout(autoSave, 500);
+      console.log('[GameSaves] Saved', key);
     },
-    writable: false,
-    configurable: false
-  });
-  console.log('[GameSaves] Active');
+    removeItem: function(key) {
+      delete cfg.storageData[key];
+      clearTimeout(cfg.saveTimeout);
+      cfg.saveTimeout = setTimeout(autoSave, 500);
+    },
+    clear: function() {
+      cfg.storageData = {};
+      clearTimeout(cfg.saveTimeout);
+      cfg.saveTimeout = setTimeout(autoSave, 500);
+    },
+    key: function(i) { return Object.keys(cfg.storageData)[i] || null; },
+    get length() { return Object.keys(cfg.storageData).length; }
+  };
+  
+  console.log('[GameSaves] Interceptor initialized');
 })();
 </script>`;
       
-      modifiedHtml = modifiedHtml.replace(/<\/body>/i, `${storageInterceptor}\n</body>`);
-      if (!modifiedHtml.includes("</body>")) {
-        modifiedHtml += storageInterceptor;
+      // Inject into HEAD first (before game code runs)
+      modifiedHtml = modifiedHtml.replace(/<head>/i, `<head>${storageInterceptor}`);
+      // Fallback: inject before </head> if <head> wasn't found
+      if (!modifiedHtml.includes(storageInterceptor)) {
+        modifiedHtml = modifiedHtml.replace(/<\/head>/i, `${storageInterceptor}</head>`);
+      }
+      // Last resort: add to body
+      if (!modifiedHtml.includes(storageInterceptor)) {
+        modifiedHtml = modifiedHtml.replace(/<body>/i, `<body>${storageInterceptor}`);
+      }
+      // Final fallback: prepend to HTML
+      if (!modifiedHtml.includes(storageInterceptor)) {
+        modifiedHtml = storageInterceptor + modifiedHtml;
       }
       
       res.send(modifiedHtml);
