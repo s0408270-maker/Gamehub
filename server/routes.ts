@@ -314,8 +314,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Validate it's a proper URL
+      let gameUrl: URL;
       try {
-        new URL(url);
+        gameUrl = new URL(url);
       } catch {
         return res.status(400).json({ message: "Invalid URL format" });
       }
@@ -334,7 +335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contentType = response.headers.get("content-type") || "text/html";
       let content = await response.text();
 
-      // If it's HTML, remove frame-busting headers and CSP directives
+      // If it's HTML, remove frame-busting headers and rewrite URLs
       if (contentType.includes("text/html")) {
         // Remove X-Frame-Options
         content = content.replace(
@@ -347,6 +348,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           /<meta\s+http-equiv=["']Content-Security-Policy["'][^>]*>/gi,
           ""
         );
+
+        // Add base tag to resolve relative URLs to the original domain
+        // This ensures relative paths like "main.bundle.js" resolve to the original domain
+        const baseTag = `<base href="${gameUrl.origin}${gameUrl.pathname.substring(0, gameUrl.pathname.lastIndexOf('/') + 1)}">`;
+        
+        if (content.includes("<head>")) {
+          content = content.replace(/<head>/i, `<head>\n${baseTag}`);
+        } else if (content.includes("<!DOCTYPE")) {
+          // Insert after DOCTYPE
+          content = content.replace(/(<!DOCTYPE[^>]*>)/i, `$1\n<head>\n${baseTag}\n</head>`);
+        } else {
+          // Prepend if no head
+          content = `<head>\n${baseTag}\n</head>\n${content}`;
+        }
       }
 
       // Set CORS headers and content-type
