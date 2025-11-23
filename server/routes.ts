@@ -446,6 +446,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // POST /api/games/add-url - Add a game from external URL
+  app.post(
+    "/api/games/add-url",
+    upload.single("thumbnail"),
+    async (req, res) => {
+      try {
+        const { title, username, gameUrl } = req.body;
+        const thumbnailFile = req.file;
+
+        if (!title || !username || !gameUrl) {
+          return res.status(400).json({ message: "Title, username, and game URL are required" });
+        }
+
+        const user = await storage.getOrCreateUser(username);
+
+        // Store the URL as the htmlPath - it will be loaded via iframe in the modal
+        const thumbnailPath = thumbnailFile ? `/uploads/thumbnails/${thumbnailFile.filename}` : null;
+
+        const gameData = insertGameSchema.parse({
+          title,
+          htmlPath: gameUrl,
+          thumbnail: thumbnailPath,
+          gameType: "html",
+          createdBy: user.id,
+        });
+
+        const game = await storage.createGame(gameData);
+        cache.invalidatePattern("games:");
+        res.status(201).json(game);
+      } catch (error) {
+        console.error("Error adding game from URL:", error);
+        if (error instanceof Error) {
+          res.status(400).json({ message: error.message });
+        } else {
+          res.status(500).json({ message: "Failed to add game URL" });
+        }
+      }
+    }
+  );
+
   // GROUP ENDPOINTS
 
   // GET /api/groups - Get all groups
