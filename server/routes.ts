@@ -178,19 +178,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Extract username from query string
+      const username = req.query.username as string;
+      
       // Inject storage proxy that communicates with parent via postMessage
       const storageInterceptor = `<script>
 (function() {
   const gameId = '${req.params.gameId}';
+  const username = '${username || ''}';
   let storageData = {};
-  let isReady = false;
   
-  // Listen for messages from parent (initial save data and confirmations)
+  if (!gameId || !username) {
+    console.log('[GameSaves] Disabled (missing gameId or username)');
+    return;
+  }
+  
+  // Listen for messages from parent (save data from backend)
   window.addEventListener('message', (e) => {
     if (e.data.type === 'GAME_SAVE_DATA') {
       if (e.data.data) {
         storageData = {...e.data.data};
-        isReady = true;
+        console.log('[GameSaves] Loaded', Object.keys(storageData).length, 'items');
       }
     }
   });
@@ -202,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
     setItem(key, value) {
       storageData[key] = String(value);
-      // Send to parent for saving
+      // Send to parent for saving immediately
       window.parent.postMessage({
         type: 'GAME_STATE_CHANGE',
         gameId: gameId,
@@ -247,7 +255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     gameId: gameId
   }, '*');
   
-  console.log('[GameSaves] Interceptor ready');
+  console.log('[GameSaves] Interceptor active');
 })();
 </script>`;
       

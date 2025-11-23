@@ -93,13 +93,13 @@ interface GamePlayerModalProps {
 }
 
 export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
+  const username = localStorage.getItem("username") || "";
   const [loading, setLoading] = useState(true);
-  const [gameUrl, setGameUrl] = useState<string>(`/api/play/${game.id}`);
+  const [gameUrl, setGameUrl] = useState<string>(`/api/play/${game.id}?username=${username}`);
   const [difficulty, setDifficulty] = useState<string>("");
   const [avgDifficulty, setAvgDifficulty] = useState<number>(0);
   const [loadError, setLoadError] = useState<string>("");
   const gameType = (game as any).gameType || "html";
-  const username = localStorage.getItem("username") || "";
   const { toast } = useToast();
 
   // Fetch average difficulty
