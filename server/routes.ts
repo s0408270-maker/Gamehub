@@ -1100,6 +1100,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/owner/ad-config", async (req, res) => {
+    try {
+      const username = req.query.username as string;
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.role !== "owner") {
+        return res.status(403).json({ message: "Only owner can access ad config" });
+      }
+      const config = await storage.getAdConfig();
+      res.json(config);
+    } catch (error) {
+      console.error("Error fetching ad config:", error);
+      res.status(500).json({ message: "Failed to fetch ad config" });
+    }
+  });
+
+  app.post("/api/owner/ad-config", async (req, res) => {
+    try {
+      const { username, publisherId, bannerAdUnitId, rewardedAdUnitId } = req.body;
+      const user = await storage.getUserByUsername(username);
+      if (!user || user.role !== "owner") {
+        return res.status(403).json({ message: "Only owner can configure ads" });
+      }
+      const config = await storage.setAdConfig(publisherId || null, bannerAdUnitId || null, rewardedAdUnitId || null);
+      res.json({ message: "Ad configuration saved!", config });
+    } catch (error) {
+      console.error("Error saving ad config:", error);
+      res.status(500).json({ message: "Failed to save ad config" });
+    }
+  });
+
   app.post("/api/battlepass/:username/claim-reward", async (req, res) => {
     try {
       const { tierId, season } = req.body;

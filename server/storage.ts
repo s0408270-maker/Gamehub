@@ -106,6 +106,10 @@ export interface IStorage {
 
   // Ad rewards
   watchAdAndUnlockTier(userId: string): Promise<UserBattlePassProgress>;
+
+  // Ad configuration
+  getAdConfig(): Promise<any>;
+  setAdConfig(publisherId: string | null, bannerAdUnitId: string | null, rewardedAdUnitId: string | null): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -512,6 +516,25 @@ export class DatabaseStorage implements IStorage {
       return result[0];
     }
     return progress;
+  }
+
+  async getAdConfig(): Promise<any> {
+    const result = await db.select().from(adConfig).limit(1);
+    return result[0] || { publisherId: null, bannerAdUnitId: null, rewardedAdUnitId: null };
+  }
+
+  async setAdConfig(publisherId: string | null, bannerAdUnitId: string | null, rewardedAdUnitId: string | null): Promise<any> {
+    const existing = await db.select().from(adConfig).limit(1);
+    if (existing.length > 0) {
+      const result = await db.update(adConfig)
+        .set({ publisherId, bannerAdUnitId, rewardedAdUnitId, updatedAt: new Date() })
+        .returning();
+      return result[0];
+    }
+    const result = await db.insert(adConfig)
+      .values({ publisherId, bannerAdUnitId, rewardedAdUnitId })
+      .returning();
+    return result[0];
   }
 
   async claimTierReward(userId: string, tierId: string, season: number): Promise<ClaimedTierReward> {

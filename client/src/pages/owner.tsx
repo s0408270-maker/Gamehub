@@ -34,10 +34,30 @@ export default function OwnerPanel() {
   const [freeGameTitle, setFreeGameTitle] = useState("");
   const [premiumGameFile, setPremiumGameFile] = useState<File | null>(null);
   const [premiumGameTitle, setPremiumGameTitle] = useState("");
+  const [publisherId, setPublisherId] = useState("");
+  const [bannerAdUnitId, setBannerAdUnitId] = useState("");
+  const [rewardedAdUnitId, setRewardedAdUnitId] = useState("");
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
   }, []);
+
+  useEffect(() => {
+    const fetchAdConfig = async () => {
+      try {
+        const res = await fetch(`/api/owner/ad-config?username=${username}`);
+        if (res.ok) {
+          const config = await res.json();
+          setPublisherId(config.publisherId || "");
+          setBannerAdUnitId(config.bannerAdUnitId || "");
+          setRewardedAdUnitId(config.rewardedAdUnitId || "");
+        }
+      } catch (error) {
+        console.error("Failed to fetch ad config:", error);
+      }
+    };
+    if (username) fetchAdConfig();
+  }, [username]);
 
   const { data: themes = [] } = useQuery<AppTheme[]>({
     queryKey: ["/api/admin/themes"],
@@ -152,6 +172,23 @@ export default function OwnerPanel() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to delete theme", variant: "destructive" });
+    },
+  });
+
+  const saveAdConfigMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/owner/ad-config", {
+        username,
+        publisherId: publisherId || null,
+        bannerAdUnitId: bannerAdUnitId || null,
+        rewardedAdUnitId: rewardedAdUnitId || null,
+      });
+    },
+    onSuccess: () => {
+      toast({ title: "Ad config saved!", description: "Your Google AdSense settings have been saved." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to save ad config", variant: "destructive" });
     },
   });
 
@@ -473,6 +510,54 @@ export default function OwnerPanel() {
             >
               <ShoppingCart className="w-4 h-4 mr-2" />
               {createThemeCosmeticMutation.isPending ? "Creating..." : "Create Theme Cosmetic"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Ad Configuration */}
+        <Card className="mb-8 border-primary/50 bg-primary/5">
+          <CardHeader>
+            <CardTitle>Google AdSense Configuration</CardTitle>
+            <CardDescription>Configure your Google AdSense credentials for monetization</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-semibold block mb-2">Publisher ID (ca-pub-xxxxx)</label>
+              <Input
+                placeholder="ca-pub-xxxxxxxxxxxxxxxx"
+                value={publisherId}
+                onChange={(e) => setPublisherId(e.target.value)}
+                data-testid="input-publisher-id"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Find this in your AdSense account settings</p>
+            </div>
+            <div>
+              <label className="text-sm font-semibold block mb-2">Banner Ad Unit ID</label>
+              <Input
+                placeholder="ca-adv-xxxxxxxxxxxxxxxx"
+                value={bannerAdUnitId}
+                onChange={(e) => setBannerAdUnitId(e.target.value)}
+                data-testid="input-banner-ad-unit"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Optional - for banner ads on pages</p>
+            </div>
+            <div>
+              <label className="text-sm font-semibold block mb-2">Rewarded Ad Unit ID</label>
+              <Input
+                placeholder="ca-adv-xxxxxxxxxxxxxxxx"
+                value={rewardedAdUnitId}
+                onChange={(e) => setRewardedAdUnitId(e.target.value)}
+                data-testid="input-rewarded-ad-unit"
+              />
+              <p className="text-xs text-muted-foreground mt-1">For the "Watch Ad to Unlock Tier" feature on battle pass</p>
+            </div>
+            <Button
+              onClick={() => saveAdConfigMutation.mutate()}
+              disabled={saveAdConfigMutation.isPending || (!publisherId && !bannerAdUnitId && !rewardedAdUnitId)}
+              className="w-full"
+              data-testid="button-save-ad-config"
+            >
+              {saveAdConfigMutation.isPending ? "Saving..." : "Save AdSense Configuration"}
             </Button>
           </CardContent>
         </Card>
