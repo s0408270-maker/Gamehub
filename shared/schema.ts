@@ -184,6 +184,24 @@ export const claimedTierRewards = pgTable("claimed_tier_rewards", {
   claimedAt: timestamp("claimed_at").defaultNow().notNull(),
 });
 
+// Ad configuration
+export const adConfig = pgTable("ad_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  publisherId: text("publisher_id"),
+  bannerAdUnitId: text("banner_ad_unit_id"),
+  rewardedAdUnitId: text("rewarded_ad_unit_id"),
+  rewardAmount: integer("reward_amount").default(50).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Ad reward claims
+export const adRewardClaims = pgTable("ad_reward_claims", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  coinAmount: integer("coin_amount").notNull(),
+  claimedAt: timestamp("claimed_at").defaultNow().notNull(),
+});
+
 // Schema definitions
 export const insertGameSchema = createInsertSchema(games).omit({ id: true });
 export const insertUserOwnedGameSchema = createInsertSchema(userOwnedGames).omit({ id: true, purchasedAt: true });
