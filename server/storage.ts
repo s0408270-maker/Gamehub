@@ -668,6 +668,18 @@ export class DatabaseStorage implements IStorage {
       return { notifications_enabled: "true" };
     }
   }
+
+  // Game saves
+  async saveGameState(userId: string, gameId: string, saveData: string): Promise<GameSave> {
+    await db.delete(gameSaves).where(and(eq(gameSaves.userId, userId), eq(gameSaves.gameId, gameId)));
+    const result = await db.insert(gameSaves).values({ userId, gameId, saveData }).returning();
+    return result[0];
+  }
+
+  async loadGameState(userId: string, gameId: string): Promise<GameSave | undefined> {
+    const result = await db.select().from(gameSaves).where(and(eq(gameSaves.userId, userId), eq(gameSaves.gameId, gameId))).limit(1);
+    return result[0];
+  }
 }
 
 export const storage = new DatabaseStorage();

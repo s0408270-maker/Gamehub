@@ -1345,6 +1345,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GAME SAVES
+  app.post("/api/games/:gameId/save", async (req, res) => {
+    try {
+      const { username, saveData } = req.body;
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const save = await storage.saveGameState(user.id, req.params.gameId, saveData);
+      res.json({ success: true, save });
+    } catch (error) {
+      console.error("Error saving game:", error);
+      res.status(400).json({ message: "Failed to save game" });
+    }
+  });
+
+  app.get("/api/games/:gameId/load", async (req, res) => {
+    try {
+      const username = req.query.username as string;
+      if (!username) {
+        return res.status(400).json({ message: "Username required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const save = await storage.loadGameState(user.id, req.params.gameId);
+      res.json({ save: save || null });
+    } catch (error) {
+      console.error("Error loading game:", error);
+      res.status(400).json({ message: "Failed to load game" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

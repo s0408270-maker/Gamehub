@@ -81,6 +81,59 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
     };
   }, [open, onClose]);
 
+  // Load game save on open
+  useEffect(() => {
+    if (!open || !username) return;
+
+    const loadSave = async () => {
+      try {
+        const res = await fetch(`/api/games/${game.id}/load?username=${username}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.save?.saveData) {
+            const iframeEl = document.querySelector('iframe') as HTMLIFrameElement;
+            if (iframeEl?.contentWindow) {
+              iframeEl.contentWindow.postMessage({
+                type: "LOAD_GAME_STATE",
+                payload: JSON.parse(data.save.saveData),
+              }, "*");
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load game save:", err);
+      }
+    };
+
+    setTimeout(loadSave, 500);
+  }, [open, game.id, username]);
+
+  // Save game state on close
+  useEffect(() => {
+    return () => {
+      if (open && username) {
+        const iframeEl = document.querySelector('iframe') as HTMLIFrameElement;
+        if (iframeEl?.contentWindow) {
+          iframeEl.contentWindow.postMessage({ type: "SAVE_GAME_STATE" }, "*");
+          setTimeout(() => {
+            window.addEventListener("message", (e) => {
+              if (e.data?.type === "GAME_STATE_READY" && e.data?.saveData) {
+                fetch(`/api/games/${game.id}/save`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    username,
+                    saveData: JSON.stringify(e.data.saveData),
+                  }),
+                });
+              }
+            }, { once: true });
+          }, 100);
+        }
+      }
+    };
+  }, [open, game.id, username]);
+
   // Track coins while playing - award 5 coins per minute
   useEffect(() => {
     if (!open || !username) return;
