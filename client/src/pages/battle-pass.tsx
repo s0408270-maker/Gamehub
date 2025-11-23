@@ -9,6 +9,7 @@ import { Trophy, Star, Lock, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { WatchAdModal } from "@/components/watch-ad-modal";
+import { DisplayAdUnit } from "@/components/ad-unit";
 
 export default function BattlePass() {
   const { toast } = useToast();
@@ -233,6 +234,9 @@ export default function BattlePass() {
             );
           })}
         </div>
+
+        {/* Ad Unit */}
+        <DisplayAdUnit />
 
         {/* Info */}
         <Card className="mt-8 bg-muted/50">
