@@ -239,6 +239,19 @@ export default function OwnerPanel() {
     },
   });
 
+  const changeSeasonMutation = useMutation({
+    mutationFn: async (newSeason: number) => {
+      return await apiRequest("POST", `/api/battlepass/${username}/change-season`, { season: newSeason });
+    },
+    onSuccess: (data: any, newSeason: number) => {
+      toast({ title: "Season changed!", description: "Your progress has been reset." });
+      setBattlePassSeason(newSeason);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error?.message || "Failed to change season", variant: "destructive" });
+    },
+  });
+
   const updateTierMutation = useMutation({
     mutationFn: async (data: { tierId: string; freeCosmeticId?: string; premiumCosmeticId?: string; freeGameId?: string; premiumGameId?: string }) => {
       return await apiRequest("PATCH", `/api/owner/battlepass/tier/${data.tierId}`, {
@@ -563,13 +576,13 @@ export default function OwnerPanel() {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
               <label className="text-sm font-semibold">Season:</label>
-              <Select value={battlePassSeason.toString()} onValueChange={(v) => setBattlePassSeason(parseInt(v))}>
-                <SelectTrigger className="w-24">
+              <Select value={battlePassSeason.toString()} onValueChange={(v) => changeSeasonMutation.mutate(parseInt(v))}>
+                <SelectTrigger className="w-24" data-testid="select-bp-season">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {[1, 2, 3, 4, 5].map(s => (
-                    <SelectItem key={s} value={s.toString()}>Season {s}</SelectItem>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(s => (
+                    <SelectItem key={s} value={s.toString()} data-testid={`option-bp-season-${s}`}>Season {s}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
