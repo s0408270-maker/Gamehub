@@ -349,19 +349,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ""
         );
 
-        // Add base tag to resolve relative URLs to the original domain
-        // This ensures relative paths like "main.bundle.js" resolve to the original domain
-        const baseTag = `<base href="${gameUrl.origin}${gameUrl.pathname.substring(0, gameUrl.pathname.lastIndexOf('/') + 1)}">`;
-        
-        if (content.includes("<head>")) {
-          content = content.replace(/<head>/i, `<head>\n${baseTag}`);
-        } else if (content.includes("<!DOCTYPE")) {
-          // Insert after DOCTYPE
-          content = content.replace(/(<!DOCTYPE[^>]*>)/i, `$1\n<head>\n${baseTag}\n</head>`);
-        } else {
-          // Prepend if no head
-          content = `<head>\n${baseTag}\n</head>\n${content}`;
-        }
+        // Rewrite relative URLs to absolute URLs pointing to the original domain
+        const basePath = gameUrl.pathname.substring(0, gameUrl.pathname.lastIndexOf('/') + 1);
+        const baseHref = `${gameUrl.origin}${basePath}`;
+
+        // Replace relative URLs in src attributes (img, script, iframe, etc.)
+        // Match src="..." where the value doesn't start with http or /
+        content = content.replace(/\bsrc=["'](?!(?:https?:|\/|data:))([^"']+)["']/gi, (match, url) => {
+          return `src="${baseHref}${url}"`;
+        });
+
+        // Replace relative URLs in href attributes (link, a, etc.)
+        content = content.replace(/\bhref=["'](?!(?:https?:|\/|data:|#|mailto:))([^"']+)["']/gi, (match, url) => {
+          return `href="${baseHref}${url}"`;
+        });
+
+        // Replace relative URLs in data attributes
+        content = content.replace(/\bdata=["'](?!(?:https?:|\/|data:))([^"']+)["']/gi, (match, url) => {
+          return `data="${baseHref}${url}"`;
+        });
+
+        // Also handle URL() in CSS
+        content = content.replace(/url\(["']?(?!(?:https?:|\/|data:))([^)'"]+)["']?\)/gi, (match, url) => {
+          return `url(${baseHref}${url})`;
+        });
       }
 
       // Set CORS headers and content-type
