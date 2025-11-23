@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { ArrowLeft, Mail, Coins, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import type { User, Cosmetic, UserCosmetic } from "@shared/schema";
 
 export default function Profile() {
   const [, params] = useRoute("/profile/:username");
+  const [, setLocation] = useLocation();
   const username = params?.username || localStorage.getItem("username") || "";
   const currentUsername = localStorage.getItem("username") || "";
   const { toast } = useToast();
@@ -104,10 +105,10 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-background pt-12">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6">
-        <a href="/" className="inline-flex items-center gap-2 text-primary hover:underline mb-6" data-testid="link-back">
+        <button onClick={() => setLocation("/")} className="inline-flex items-center gap-2 text-primary hover:underline mb-6 bg-transparent border-none cursor-pointer" data-testid="link-back">
           <ArrowLeft className="w-4 h-4" />
           Back to Games
-        </a>
+        </button>
 
         {/* Profile Header */}
         <Card className="mb-6" data-frame={frameCosmetic?.value || undefined} data-testid="card-profile-header">
@@ -175,9 +176,10 @@ export default function Profile() {
                         variant={!frameCosmetic ? "default" : "outline"}
                         className="w-full justify-start"
                         onClick={() => updateCosmeticMutation.mutate({ type: "frame", cosmeticId: null })}
+                        disabled={updateCosmeticMutation.isPending}
                         data-testid="button-remove-frame"
                       >
-                        None
+                        {updateCosmeticMutation.isPending ? "Updating..." : "None"}
                       </Button>
                       {frameCosmetics.map((uc: any) => (
                         <Button
@@ -185,9 +187,10 @@ export default function Profile() {
                           variant={frameCosmetic?.id === uc.cosmeticId ? "default" : "outline"}
                           className="w-full justify-start"
                           onClick={() => updateCosmeticMutation.mutate({ type: "frame", cosmeticId: uc.cosmeticId })}
+                          disabled={updateCosmeticMutation.isPending}
                           data-testid={`button-select-frame-${uc.cosmeticId}`}
                         >
-                          {uc.cosmetic.name}
+                          {updateCosmeticMutation.isPending ? "Updating..." : uc.cosmetic.name}
                         </Button>
                       ))}
                     </div>
@@ -227,9 +230,10 @@ export default function Profile() {
                         variant={!badgeCosmetic ? "default" : "outline"}
                         className="w-full justify-start"
                         onClick={() => updateCosmeticMutation.mutate({ type: "badge", cosmeticId: null })}
+                        disabled={updateCosmeticMutation.isPending}
                         data-testid="button-remove-badge"
                       >
-                        None
+                        {updateCosmeticMutation.isPending ? "Updating..." : "None"}
                       </Button>
                       {badgeCosmetics.map((uc: any) => (
                         <Button
@@ -237,9 +241,10 @@ export default function Profile() {
                           variant={badgeCosmetic?.id === uc.cosmeticId ? "default" : "outline"}
                           className="w-full justify-start"
                           onClick={() => updateCosmeticMutation.mutate({ type: "badge", cosmeticId: uc.cosmeticId })}
+                          disabled={updateCosmeticMutation.isPending}
                           data-testid={`button-select-badge-${uc.cosmeticId}`}
                         >
-                          {uc.cosmetic.name}
+                          {updateCosmeticMutation.isPending ? "Updating..." : uc.cosmetic.name}
                         </Button>
                       ))}
                     </div>
@@ -279,9 +284,10 @@ export default function Profile() {
                         variant={!cursorCosmetic ? "default" : "outline"}
                         className="w-full justify-start"
                         onClick={() => updateCosmeticMutation.mutate({ type: "cursor", cosmeticId: null })}
+                        disabled={updateCosmeticMutation.isPending}
                         data-testid="button-remove-cursor"
                       >
-                        None
+                        {updateCosmeticMutation.isPending ? "Updating..." : "None"}
                       </Button>
                       {cursorCosmetics.map((uc: any) => (
                         <Button
@@ -289,9 +295,10 @@ export default function Profile() {
                           variant={cursorCosmetic?.id === uc.cosmeticId ? "default" : "outline"}
                           className="w-full justify-start"
                           onClick={() => updateCosmeticMutation.mutate({ type: "cursor", cosmeticId: uc.cosmeticId })}
+                          disabled={updateCosmeticMutation.isPending}
                           data-testid={`button-select-cursor-${uc.cosmeticId}`}
                         >
-                          {uc.cosmetic.name}
+                          {updateCosmeticMutation.isPending ? "Updating..." : uc.cosmetic.name}
                         </Button>
                       ))}
                     </div>
