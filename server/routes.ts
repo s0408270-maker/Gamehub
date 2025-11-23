@@ -303,6 +303,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/games/proxy-url - Proxy external game URLs (removes frame restrictions)
+  // MUST be registered BEFORE /:id route to avoid being caught by :id matcher
+  app.get("/api/games/proxy-url", async (req, res) => {
+    try {
+      const { url } = req.query;
+      
+      if (!url || typeof url !== "string") {
+        return res.status(400).json({ message: "URL parameter is required" });
+      }
+
+      // Validate it's a proper URL
+      try {
+        new URL(url);
+      } catch {
+        return res.status(400).json({ message: "Invalid URL format" });
+      }
+
+      // Fetch the external content
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        },
+      });
+
+      if (!response.ok) {
+        return res.status(response.status).json({ message: "Failed to fetch external game" });
+      }
+
+      const contentType = response.headers.get("content-type") || "text/html";
+      let content = await response.text();
+
+      // If it's HTML, remove frame-busting headers and CSP directives
+      if (contentType.includes("text/html")) {
+        // Remove X-Frame-Options
+        content = content.replace(
+          /<meta\s+http-equiv=["']X-UA-Compatible["']/gi,
+          "<meta http-equiv='X-UA-Compatible'"
+        );
+        
+        // Remove or modify CSP to allow framing
+        content = content.replace(
+          /<meta\s+http-equiv=["']Content-Security-Policy["'][^>]*>/gi,
+          ""
+        );
+      }
+
+      // Set CORS headers and content-type
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      
+      res.send(content);
+    } catch (error) {
+      console.error("Error proxying game URL:", error);
+      res.status(500).json({ message: "Failed to proxy game" });
+    }
+  });
+
   // GET /api/games/:id - Get a specific game
   app.get("/api/games/:id", async (req, res) => {
     try {
@@ -485,63 +543,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   );
-
-  // GET /api/games/proxy-url - Proxy external game URLs (removes frame restrictions)
-  app.get("/api/games/proxy-url", async (req, res) => {
-    try {
-      const { url } = req.query;
-      
-      if (!url || typeof url !== "string") {
-        return res.status(400).json({ message: "URL parameter is required" });
-      }
-
-      // Validate it's a proper URL
-      try {
-        new URL(url);
-      } catch {
-        return res.status(400).json({ message: "Invalid URL format" });
-      }
-
-      // Fetch the external content
-      const response = await fetch(url, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        },
-      });
-
-      if (!response.ok) {
-        return res.status(response.status).json({ message: "Failed to fetch external game" });
-      }
-
-      const contentType = response.headers.get("content-type") || "text/html";
-      let content = await response.text();
-
-      // If it's HTML, remove frame-busting headers and CSP directives
-      if (contentType.includes("text/html")) {
-        // Remove X-Frame-Options
-        content = content.replace(
-          /<meta\s+http-equiv=["']X-UA-Compatible["']/gi,
-          "<meta http-equiv='X-UA-Compatible'"
-        );
-        
-        // Remove or modify CSP to allow framing
-        content = content.replace(
-          /<meta\s+http-equiv=["']Content-Security-Policy["'][^>]*>/gi,
-          ""
-        );
-      }
-
-      // Set CORS headers and content-type
-      res.setHeader("Content-Type", contentType);
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      res.setHeader("X-Content-Type-Options", "nosniff");
-      
-      res.send(content);
-    } catch (error) {
-      console.error("Error proxying game URL:", error);
-      res.status(500).json({ message: "Failed to proxy game" });
-    }
-  });
 
   // GROUP ENDPOINTS
 
