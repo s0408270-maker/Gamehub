@@ -443,7 +443,8 @@ export class DatabaseStorage implements IStorage {
   // Battle pass
   async getBattlePassTiers(season: number): Promise<BattlePassTier[]> {
     return await db.select().from(battlePassTiers)
-      .where(eq(battlePassTiers.season, season));
+      .where(eq(battlePassTiers.season, season))
+      .orderBy(battlePassTiers.tier);
   }
 
   async getUserBattlePassProgress(userId: string): Promise<UserBattlePassProgress> {
