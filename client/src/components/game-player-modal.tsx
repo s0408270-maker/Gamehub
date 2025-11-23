@@ -10,6 +10,82 @@ import { useEffect, useState } from "react";
 // Add Ruffle player script
 const RUFFLE_SCRIPT = "https://cdn.jsdelivr.net/npm/ruffle-rs@latest/dist/ruffle.js";
 
+// Storage interceptor script - hooks localStorage and connects to backend
+const STORAGE_INTERCEPTOR = `
+(function() {
+  const gameId = new URLSearchParams(window.location.search).get('gameId') || '';
+  const username = localStorage.getItem('username') || '';
+  
+  if (!gameId || !username) return;
+  
+  // Create a proxy for localStorage
+  const storageData = {};
+  
+  const createStorageProxy = () => ({
+    getItem(key) {
+      return storageData[key] || null;
+    },
+    setItem(key, value) {
+      storageData[key] = String(value);
+      // Async save to backend - fire and forget
+      fetch('/api/games/' + gameId + '/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: username,
+          saveData: JSON.stringify(storageData)
+        })
+      }).catch(e => console.log('Save failed:', e));
+    },
+    removeItem(key) {
+      delete storageData[key];
+      fetch('/api/games/' + gameId + '/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: username,
+          saveData: JSON.stringify(storageData)
+        })
+      }).catch(e => console.log('Save failed:', e));
+    },
+    clear() {
+      Object.keys(storageData).forEach(k => delete storageData[k]);
+      fetch('/api/games/' + gameId + '/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: username,
+          saveData: JSON.stringify({})
+        })
+      }).catch(e => console.log('Save failed:', e));
+    },
+    key(index) {
+      const keys = Object.keys(storageData);
+      return keys[index] || null;
+    },
+    get length() {
+      return Object.keys(storageData).length;
+    }
+  });
+  
+  // Load existing saves
+  fetch('/api/games/' + gameId + '/load?username=' + username)
+    .then(r => r.json())
+    .then(d => {
+      if (d.save?.saveData) {
+        Object.assign(storageData, JSON.parse(d.save.saveData));
+      }
+    })
+    .catch(e => console.log('Load failed:', e));
+  
+  // Replace localStorage
+  Object.defineProperty(window, 'localStorage', {
+    value: createStorageProxy(),
+    writable: false
+  });
+})();
+`;
+
 interface GamePlayerModalProps {
   game: Game;
   open: boolean;
