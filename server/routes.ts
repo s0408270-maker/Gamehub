@@ -1081,21 +1081,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) return res.status(404).json({ message: "User not found" });
       
       const session = gamePlayingSessions.get(user.id);
-      if (!session) {
-        return res.status(400).json({ message: "No active play session" });
+      
+      // If no session in memory, award minimum 1 minute worth of XP (15 XP)
+      // This handles server restarts and missing session data
+      let playTimeMinutes = 1;
+      if (session) {
+        playTimeMinutes = Math.max(1, Math.floor((Date.now() - session.startTime) / 60000));
+        gamePlayingSessions.delete(user.id);
       }
-
-      const playTimeMinutes = Math.max(1, Math.floor((Date.now() - session.startTime) / 60000));
+      
       const xpEarned = playTimeMinutes * 15;
       
       await storage.addBattlePassExperience(user.id, xpEarned);
       await storage.addCoins(user.id, xpEarned);
       
-      gamePlayingSessions.delete(user.id);
+      console.log(`[XP] ${username} earned ${xpEarned} XP from ${playTimeMinutes} minutes of gameplay`);
       res.json({ xpEarned, coinsEarned: xpEarned, playTimeMinutes });
     } catch (error) {
       console.error("Error ending play session:", error);
-      res.status(400).json({ message: "Failed to end session" });
+      res.status(500).json({ message: "Failed to end session: " + error });
     }
   });
 

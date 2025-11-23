@@ -169,9 +169,11 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username }),
         });
+        const data = await response.json();
         if (response.ok) {
-          const data = await response.json();
           toast({ title: "Session Ended", description: `Earned ${data.xpEarned} XP and ${data.coinsEarned} coins!` });
+        } else {
+          console.error("Play session error:", data);
         }
       } catch (err) {
         console.error("Failed to end play session:", err);
