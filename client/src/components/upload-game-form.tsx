@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
-import { Upload, FileCode, Image as ImageIcon, Loader2, AlertTriangle, Disc3, Code } from "lucide-react";
+import { Upload, FileCode, Image as ImageIcon, Loader2, AlertTriangle, Disc3, Code, Link2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -27,10 +27,11 @@ interface UploadGameFormProps {
 }
 
 export function UploadGameForm({ onSuccess, isPremium = false, premiumPrice = 0 }: UploadGameFormProps) {
-  const [uploadMode, setUploadMode] = useState<"file" | "code">("file");
+  const [uploadMode, setUploadMode] = useState<"file" | "code" | "url">("file");
   const [gameFile, setGameFile] = useState<File | null>(null);
   const [gameFileName, setGameFileName] = useState<string>("");
   const [htmlCode, setHtmlCode] = useState<string>("");
+  const [gameUrl, setGameUrl] = useState<string>("");
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailFileName, setThumbnailFileName] = useState<string>("");
   const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
@@ -51,7 +52,37 @@ export function UploadGameForm({ onSuccess, isPremium = false, premiumPrice = 0 
     mutationFn: async (data: TitleFormData) => {
       const username = localStorage.getItem("username") || "";
 
-      if (uploadMode === "code") {
+      if (uploadMode === "url") {
+        if (!gameUrl) throw new Error("Game URL is required");
+        try {
+          new URL(gameUrl);
+        } catch {
+          throw new Error("Invalid URL format");
+        }
+
+        const formData = new FormData();
+        formData.append("title", data.title);
+        formData.append("gameUrl", gameUrl);
+        if (thumbnailFile) {
+          formData.append("thumbnail", thumbnailFile);
+        }
+        formData.append("username", username);
+        if (isPremium && premiumPrice > 0) {
+          formData.append("price", premiumPrice.toString());
+        }
+
+        const response = await fetch("/api/games/add-url", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to add game URL");
+        }
+
+        return response.json();
+      } else if (uploadMode === "code") {
         if (!htmlCode) throw new Error("HTML code is required");
 
         const formData = new FormData();
@@ -113,6 +144,7 @@ export function UploadGameForm({ onSuccess, isPremium = false, premiumPrice = 0 
       setGameFile(null);
       setGameFileName("");
       setHtmlCode("");
+      setGameUrl("");
       setThumbnailFile(null);
       setThumbnailFileName("");
       setThumbnailPreview("");
@@ -133,7 +165,17 @@ export function UploadGameForm({ onSuccess, isPremium = false, premiumPrice = 0 
   const onSubmit = (data: TitleFormData) => {
     const errors: { game?: string; thumbnail?: string } = {};
     
-    if (uploadMode === "code") {
+    if (uploadMode === "url") {
+      if (!gameUrl) {
+        errors.game = "Game URL is required";
+      } else {
+        try {
+          new URL(gameUrl);
+        } catch {
+          errors.game = "Invalid URL format";
+        }
+      }
+    } else if (uploadMode === "code") {
       if (!htmlCode) {
         errors.game = "HTML code is required";
       }
@@ -197,15 +239,22 @@ export function UploadGameForm({ onSuccess, isPremium = false, premiumPrice = 0 
 
         <div>
           <Label className="text-sm sm:text-base font-semibold block mb-3">Game Source</Label>
-          <Tabs value={uploadMode} onValueChange={(val) => setUploadMode(val as "file" | "code")} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
+          <Tabs value={uploadMode} onValueChange={(val) => setUploadMode(val as "file" | "code" | "url")} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-4">
               <TabsTrigger value="file" data-testid="tab-upload-file">
                 <Upload className="w-4 h-4 mr-2" />
-                Upload File
+                <span className="hidden sm:inline">Upload File</span>
+                <span className="inline sm:hidden">File</span>
               </TabsTrigger>
               <TabsTrigger value="code" data-testid="tab-paste-code">
                 <Code className="w-4 h-4 mr-2" />
-                Paste Code
+                <span className="hidden sm:inline">Paste Code</span>
+                <span className="inline sm:hidden">Code</span>
+              </TabsTrigger>
+              <TabsTrigger value="url" data-testid="tab-play-url">
+                <Link2 className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Play URL</span>
+                <span className="inline sm:hidden">URL</span>
               </TabsTrigger>
             </TabsList>
 
@@ -280,6 +329,23 @@ export function UploadGameForm({ onSuccess, isPremium = false, premiumPrice = 0 
                 className="resize-none h-48 text-sm font-mono"
                 data-testid="textarea-html-code"
               />
+              {fileErrors.game && <p className="text-xs sm:text-sm text-destructive">{fileErrors.game}</p>}
+            </TabsContent>
+
+            <TabsContent value="url" className="space-y-4">
+              <Input
+                placeholder="https://example.com/game.html or https://mercurygames-15327267.codehs.me/game42.html"
+                value={gameUrl}
+                onChange={(e) => {
+                  setGameUrl(e.target.value);
+                  setFileErrors(prev => ({ ...prev, game: undefined }));
+                }}
+                className="text-sm"
+                data-testid="input-game-url"
+              />
+              <p className="text-xs text-muted-foreground">
+                Paste any game URL to play it directly in PixelPlex. The game will load in an iframe.
+              </p>
               {fileErrors.game && <p className="text-xs sm:text-sm text-destructive">{fileErrors.game}</p>}
             </TabsContent>
           </Tabs>
