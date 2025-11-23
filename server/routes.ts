@@ -5,6 +5,8 @@ import path from "path";
 import fs from "fs/promises";
 import { storage } from "./storage";
 import { cache } from "./cache";
+import { db } from "./db";
+import { userOwnedGames } from "@shared/schema";
 import { insertGameSchema, insertGroupSchema, insertGroupGameSchema, insertMessageSchema } from "@shared/schema";
 
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -1070,7 +1072,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUserByUsername(req.params.username);
       if (!user) return res.status(404).json({ message: "User not found" });
       
-      // Claim the reward
+      // Get tier to find reward details
+      const tiers = await storage.getBattlePassTiers(season);
+      const tier = tiers.find((t: any) => t.id === tierId);
+      
+      if (tier) {
+        // Check if user has premium pass
+        const progress = await storage.getUserBattlePassProgress(user.id);
+        const hasPremium = progress.hasPremiumPass === "true";
+        
+        // Award cosmetic reward
+        const cosmeticId = hasPremium ? tier.premiumCosmeticId : tier.freeCosmeticId;
+        if (cosmeticId) {
+          try {
+            await storage.purchaseCosmetic(user.id, cosmeticId);
+          } catch (e) {
+            // Cosmetic might already be owned, that's fine
+          }
+        }
+        
+        // Award game reward
+        const gameId = hasPremium ? tier.premiumGameId : tier.freeGameId;
+        if (gameId) {
+          try {
+            await db.insert(userOwnedGames)
+              .values({ userId: user.id, gameId })
+              .onConflictDoNothing();
+          } catch (e) {
+            // Game might already be owned, that's fine
+          }
+        }
+      }
+      
+      // Mark reward as claimed
       await storage.claimTierReward(user.id, tierId, season);
       
       res.json({ message: "Reward claimed successfully" });
