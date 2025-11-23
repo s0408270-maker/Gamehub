@@ -1055,7 +1055,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const tiers = await storage.getBattlePassTiers(progress.currentSeason);
       const claimedRewards = await storage.getClaimedTierRewards(user.id, progress.currentSeason);
-      const claimedTierIds = new Set(claimedRewards.map(r => r.tierId));
+      const claimedTierIds = claimedRewards.map(r => r.tierId);
       
       res.json({ progress, tiers, claimedRewards: claimedTierIds });
     } catch (error) {

@@ -15,7 +15,7 @@ export default function BattlePass() {
   const { data: battlePassData, isLoading } = useQuery<{
     progress: { currentSeason: number; currentTier: number; experience: number; hasPremiumPass: string };
     tiers: unknown[];
-    claimedRewards: Set<string>;
+    claimedRewards: string[];
   }>({
     queryKey: [`/api/battlepass/${username}`],
   });
@@ -130,7 +130,7 @@ export default function BattlePass() {
             const tierNum = tier.tier;
             const isReached = progress.currentTier >= tierNum;
             const isCurrent = progress.currentTier === tierNum;
-            const isClaimed = battlePassData.claimedRewards?.has(tier.id) || false;
+            const isClaimed = battlePassData.claimedRewards?.includes(tier.id) || false;
 
             return (
               <Card
