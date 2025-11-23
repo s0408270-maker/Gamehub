@@ -257,3 +257,6 @@ export type GameSave = typeof gameSaves.$inferSelect;
 export type InsertGameSave = z.infer<typeof insertGameSaveSchema>;
 export type ClaimedTierReward = typeof claimedTierRewards.$inferSelect;
 export type InsertClaimedTierReward = z.infer<typeof insertClaimedTierRewardSchema>;
+
+export type AdConfig = typeof adConfig.$inferSelect;
+export type AdRewardClaim = typeof adRewardClaims.$inferSelect;

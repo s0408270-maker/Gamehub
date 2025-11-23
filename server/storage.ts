@@ -1,4 +1,4 @@
-import { type Game, type InsertGame, games, groups, groupMembers, groupGames, messages, users, type Group, type InsertGroup, type GroupGame, type InsertGroupGame, type Message, type InsertMessage, type User, type InsertUser, type GroupMember, cosmetics, userCosmetics, activeCosmeticsMap, type Cosmetic, type UserCosmetic, type ActiveCosmetic, gameDifficultyVotes, type GameDifficultyVote, type InsertGameDifficultyVote, cosmeticTrades, type CosmeticTrade, type InsertCosmeticTrade, battlePassTiers, userBattlePassProgress, type BattlePassTier, type InsertBattlePassTier, type UserBattlePassProgress, type InsertUserBattlePassProgress, appThemes, type AppTheme, type InsertAppTheme, announcements, type Announcement, type InsertAnnouncement, userOwnedGames, type UserOwnedGame, gameSaves, type GameSave, type InsertGameSave, claimedTierRewards, type ClaimedTierReward, type InsertClaimedTierReward } from "@shared/schema";
+import { type Game, type InsertGame, games, groups, groupMembers, groupGames, messages, users, type Group, type InsertGroup, type GroupGame, type InsertGroupGame, type Message, type InsertMessage, type User, type InsertUser, type GroupMember, cosmetics, userCosmetics, activeCosmeticsMap, type Cosmetic, type UserCosmetic, type ActiveCosmetic, gameDifficultyVotes, type GameDifficultyVote, type InsertGameDifficultyVote, cosmeticTrades, type CosmeticTrade, type InsertCosmeticTrade, battlePassTiers, userBattlePassProgress, type BattlePassTier, type InsertBattlePassTier, type UserBattlePassProgress, type InsertUserBattlePassProgress, appThemes, type AppTheme, type InsertAppTheme, announcements, type Announcement, type InsertAnnouncement, userOwnedGames, type UserOwnedGame, gameSaves, type GameSave, type InsertGameSave, claimedTierRewards, type ClaimedTierReward, type InsertClaimedTierReward, adRewardClaims, type AdRewardClaim } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -103,6 +103,9 @@ export interface IStorage {
 
   // Season management
   changeUserBattlePassSeason(userId: string, season: number): Promise<UserBattlePassProgress>;
+
+  // Ad rewards
+  watchAdAndUnlockTier(userId: string): Promise<UserBattlePassProgress>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -497,6 +500,18 @@ export class DatabaseStorage implements IStorage {
       .where(eq(userBattlePassProgress.userId, userId))
       .returning();
     return result[0];
+  }
+
+  async watchAdAndUnlockTier(userId: string): Promise<UserBattlePassProgress> {
+    const progress = await this.getUserBattlePassProgress(userId);
+    if (progress.currentTier < 50) {
+      const result = await db.update(userBattlePassProgress)
+        .set({ currentTier: progress.currentTier + 1 })
+        .where(eq(userBattlePassProgress.userId, userId))
+        .returning();
+      return result[0];
+    }
+    return progress;
   }
 
   async claimTierReward(userId: string, tierId: string, season: number): Promise<ClaimedTierReward> {

@@ -1087,6 +1087,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/battlepass/:username/watch-ad", async (req, res) => {
+    try {
+      const user = await storage.getUserByUsername(req.params.username);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      
+      const newProgress = await storage.watchAdAndUnlockTier(user.id);
+      res.json({ message: "Tier unlocked! Watch more ads to progress further.", progress: newProgress });
+    } catch (error) {
+      console.error("Error unlocking tier:", error);
+      res.status(500).json({ message: "Failed to unlock tier" });
+    }
+  });
+
   app.post("/api/battlepass/:username/claim-reward", async (req, res) => {
     try {
       const { tierId, season } = req.body;
