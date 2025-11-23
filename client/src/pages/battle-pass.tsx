@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trophy, Star, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -18,6 +19,19 @@ export default function BattlePass() {
     claimedRewards: string[];
   }>({
     queryKey: [`/api/battlepass/${username}`],
+  });
+
+  const changeSeasonMutation = useMutation({
+    mutationFn: async (season: number) => {
+      return await apiRequest("POST", `/api/battlepass/${username}/change-season`, { season });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/battlepass/${username}`] });
+      toast({ title: "Success", description: "Season changed!" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error?.message || "Failed to change season", variant: "destructive" });
+    },
   });
 
   const claimRewardMutation = useMutation({
@@ -86,9 +100,20 @@ export default function BattlePass() {
             <Trophy className="w-10 h-10 text-primary" />
             <h1 className="text-4xl font-bold">Battle Pass</h1>
           </div>
-          <Badge variant="default" className="text-lg px-4 py-2">
-            Season {progress.currentSeason}
-          </Badge>
+          <div className="flex items-center gap-4">
+            <Select value={String(progress.currentSeason)} onValueChange={(value) => changeSeasonMutation.mutate(parseInt(value))}>
+              <SelectTrigger className="w-40" data-testid="select-season">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((season) => (
+                  <SelectItem key={season} value={String(season)} data-testid={`option-season-${season}`}>
+                    Season {season}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Progress Card */}
