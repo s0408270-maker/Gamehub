@@ -1050,6 +1050,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) return res.status(404).json({ message: "User not found" });
       let progress = await storage.getUserBattlePassProgress(user.id);
       
+      // Ensure all battle pass tiers exist for this season
+      await storage.ensureBattlePassTiersExist(progress.currentSeason);
+      
       // Special case: Platypie starts with 3 tiers unlocked
       if (req.params.username === "Platypie" && progress.currentTier === 0) {
         progress = await storage.setUserBattlePassTier(user.id, 3);
