@@ -335,7 +335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const contentType = response.headers.get("content-type") || "text/html";
       let content = await response.text();
 
-      // If it's HTML, remove frame-busting headers and rewrite URLs
+      // If it's HTML, remove frame-busting headers and add base tag
       if (contentType.includes("text/html")) {
         // Remove X-Frame-Options
         content = content.replace(
@@ -349,36 +349,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ""
         );
 
-        // Rewrite relative URLs to absolute URLs pointing to the original domain
+        // Add base tag to resolve all relative URLs to original domain
         const basePath = gameUrl.pathname.substring(0, gameUrl.pathname.lastIndexOf('/') + 1);
-        const baseHref = `${gameUrl.origin}${basePath}`;
-
-        // Replace relative URLs in src attributes (img, script, iframe, etc.)
-        // Match src="..." where the value doesn't start with http or /
-        content = content.replace(/\bsrc=["'](?!(?:https?:|\/|data:))([^"']+)["']/gi, (match, url) => {
-          return `src="${baseHref}${url}"`;
-        });
-
-        // Replace relative URLs in href attributes (link, a, etc.)
-        content = content.replace(/\bhref=["'](?!(?:https?:|\/|data:|#|mailto:))([^"']+)["']/gi, (match, url) => {
-          return `href="${baseHref}${url}"`;
-        });
-
-        // Replace relative URLs in data attributes
-        content = content.replace(/\bdata=["'](?!(?:https?:|\/|data:))([^"']+)["']/gi, (match, url) => {
-          return `data="${baseHref}${url}"`;
-        });
-
-        // Also handle URL() in CSS
-        content = content.replace(/url\(["']?(?!(?:https?:|\/|data:))([^)'"]+)["']?\)/gi, (match, url) => {
-          return `url(${baseHref}${url})`;
-        });
+        const baseUrl = `${gameUrl.origin}${basePath}`;
+        const baseTag = `<base href="${baseUrl}" />`;
+        
+        // Insert base tag in head, or create head if needed
+        if (/<head[\s>]/i.test(content)) {
+          content = content.replace(/<head[\s>]/i, (match) => `${match}\n${baseTag}`);
+        } else if (/<html[\s>]/i.test(content)) {
+          content = content.replace(/<html[\s>]/i, (match) => `${match}\n<head>${baseTag}</head>`);
+        } else {
+          content = `<head>${baseTag}</head>\n${content}`;
+        }
       }
 
-      // Set CORS headers and content-type
+      // Set CORS headers and disable caching
       res.setHeader("Content-Type", contentType);
       res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
       res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
       
       res.send(content);
     } catch (error) {
