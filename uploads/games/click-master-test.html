@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Click Master</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .score {
+            font-size: 3em;
+            color: #667eea;
+            font-weight: bold;
+            margin: 20px 0;
+            min-height: 50px;
+        }
+
+        .click-button {
+            width: 150px;
+            height: 150px;
+            font-size: 3em;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            cursor: pointer;
+            margin: 30px auto;
+            transition: transform 0.1s;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .click-button:active {
+            transform: scale(0.95);
+        }
+
+        .upgrades {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .upgrade-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .upgrade-button:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .upgrade-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+
+        .stat {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            color: #333;
+        }
+
+        .stat-label {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .reset-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .reset-button:hover {
+            background: #ff5252;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💎 Click Master</h1>
+        <p style="color: #999; margin-bottom: 20px;">Click the button to earn points!</p>
+        
+        <div class="score" id="score">0</div>
+        
+        <button class="click-button" id="clickBtn">Click!</button>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Per Click</div>
+                <div id="perClick">1</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Per Second</div>
+                <div id="perSecond">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Auto Clickers</div>
+                <div id="autoClickers">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Total Clicks</div>
+                <div id="totalClicks">0</div>
+            </div>
+        </div>
+
+        <div class="upgrades">
+            <h3 style="color: #333; margin-bottom: 15px;">Upgrades</h3>
+            <button class="upgrade-button" id="upgrade1">+1 Per Click (Cost: 10)</button>
+            <button class="upgrade-button" id="upgrade2">Auto Clicker (Cost: 100)</button>
+            <button class="upgrade-button" id="upgrade3">Double Click Power (Cost: 500)</button>
+            <button class="upgrade-button" id="upgrade4">Auto Clicker Boost (Cost: 1000)</button>
+        </div>
+
+        <button class="reset-button" id="resetBtn">Reset Game</button>
+    </div>
+
+    <script>
+        // Game state
+        let state = {
+            score: 0,
+            perClick: 1,
+            autoClickers: 0,
+            totalClicks: 0,
+            upgrade1Bought: 0,
+            upgrade2Bought: 0,
+            upgrade3Bought: 0,
+            upgrade4Bought: 0
+        };
+
+        // Load from localStorage
+        function loadGame() {
+            const saved = localStorage.getItem('clickerGame');
+            if (saved) {
+                try {
+                    state = JSON.parse(saved);
+                    console.log('Game loaded:', state);
+                } catch (e) {
+                    console.log('Failed to parse save:', e);
+                }
+            }
+        }
+
+        // Save to localStorage (this is what we're testing!)
+        function saveGame() {
+            localStorage.setItem('clickerGame', JSON.stringify(state));
+            console.log('Game saved:', state);
+        }
+
+        // Auto-save every second
+        setInterval(saveGame, 1000);
+
+        // Click handler
+        document.getElementById('clickBtn').addEventListener('click', () => {
+            state.score += state.perClick;
+            state.totalClicks += 1;
+            updateDisplay();
+            saveGame();
+        });
+
+        // Upgrade handlers
+        document.getElementById('upgrade1').addEventListener('click', () => {
+            if (state.score >= 10) {
+                state.score -= 10;
+                state.perClick += 1;
+                state.upgrade1Bought += 1;
+                updateDisplay();
+                saveGame();
+            }
+        });
+
+        document.getElementById('upgrade2').addEventListener('click', () => {
+            if (state.score >= 100) {
+                state.score -= 100;
+                state.autoClickers += 1;
+                state.upgrade2Bought += 1;
+                updateDisplay();
+                saveGame();
+            }
+        });
+
+        document.getElementById('upgrade3').addEventListener('click', () => {
+            if (state.score >= 500) {
+                state.score -= 500;
+                state.perClick *= 2;
+                state.upgrade3Bought += 1;
+                updateDisplay();
+                saveGame();
+            }
+        });
+
+        document.getElementById('upgrade4').addEventListener('click', () => {
+            if (state.score >= 1000) {
+                state.score -= 1000;
+                state.autoClickers += 5;
+                state.upgrade4Bought += 1;
+                updateDisplay();
+                saveGame();
+            }
+        });
+
+        // Reset handler
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (confirm('Are you sure? This will reset your game.')) {
+                state = {
+                    score: 0,
+                    perClick: 1,
+                    autoClickers: 0,
+                    totalClicks: 0,
+                    upgrade1Bought: 0,
+                    upgrade2Bought: 0,
+                    upgrade3Bought: 0,
+                    upgrade4Bought: 0
+                };
+                localStorage.removeItem('clickerGame');
+                updateDisplay();
+            }
+        });
+
+        // Auto-clicker income (add score every second per auto clicker)
+        setInterval(() => {
+            if (state.autoClickers > 0) {
+                state.score += state.autoClickers;
+                updateDisplay();
+                saveGame();
+            }
+        }, 1000);
+
+        // Update display
+        function updateDisplay() {
+            document.getElementById('score').textContent = Math.floor(state.score);
+            document.getElementById('perClick').textContent = state.perClick;
+            document.getElementById('perSecond').textContent = state.autoClickers;
+            document.getElementById('autoClickers').textContent = state.autoClickers;
+            document.getElementById('totalClicks').textContent = state.totalClicks;
+
+            // Update button states
+            document.getElementById('upgrade1').disabled = state.score < 10;
+            document.getElementById('upgrade2').disabled = state.score < 100;
+            document.getElementById('upgrade3').disabled = state.score < 500;
+            document.getElementById('upgrade4').disabled = state.score < 1000;
+
+            document.getElementById('upgrade1').textContent = `+1 Per Click (Cost: 10) - Bought: ${state.upgrade1Bought}`;
+            document.getElementById('upgrade2').textContent = `Auto Clicker (Cost: 100) - Bought: ${state.upgrade2Bought}`;
+            document.getElementById('upgrade3').textContent = `Double Click Power (Cost: 500) - Bought: ${state.upgrade3Bought}`;
+            document.getElementById('upgrade4').textContent = `Auto Clicker Boost (Cost: 1000) - Bought: ${state.upgrade4Bought}`;
+        }
+
+        // Load and display on start
+        loadGame();
+        updateDisplay();
+    </script>
+</body>
+</html>
