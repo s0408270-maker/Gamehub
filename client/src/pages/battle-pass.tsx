@@ -5,15 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trophy, Star, Lock, Play } from "lucide-react";
+import { Trophy, Star, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { WatchAdModal } from "@/components/watch-ad-modal";
+import { DisplayAdUnit } from "@/components/ad-unit";
 
 export default function BattlePass() {
   const { toast } = useToast();
   const username = localStorage.getItem("username") || "";
-  const [adModalOpen, setAdModalOpen] = useState(false);
 
   const { data: userData } = useQuery<{ role: string }>({
     queryKey: [`/api/user/${username}`],
@@ -28,19 +27,6 @@ export default function BattlePass() {
   });
 
   const isOwner = userData?.role === "owner";
-
-  const watchAdMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest("POST", `/api/battlepass/${username}/watch-ad`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/battlepass/${username}`] });
-      toast({ title: "Success", description: "Tier unlocked!" });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to unlock tier", variant: "destructive" });
-    },
-  });
 
   const changeSeasonMutation = useMutation({
     mutationFn: async (season: number) => {
@@ -148,18 +134,6 @@ export default function BattlePass() {
             <CardTitle className="flex items-center justify-between">
               <span>Tier {progress.currentTier} of 50</span>
               <div className="flex items-center gap-2">
-                {progress.currentTier < 50 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setAdModalOpen(true)}
-                    disabled={watchAdMutation.isPending}
-                    data-testid="button-watch-ad"
-                  >
-                    <Play className="w-3 h-3 mr-1" />
-                    {watchAdMutation.isPending ? "Unlocking..." : "Watch Ad (+1 Tier)"}
-                  </Button>
-                )}
                 {progress.hasPremiumPass === "true" ? (
                   <Badge variant="default">Premium Pass</Badge>
                 ) : (
@@ -234,22 +208,18 @@ export default function BattlePass() {
           })}
         </div>
 
+        {/* Display Ad */}
+        <DisplayAdUnit />
+
         {/* Info */}
         <Card className="mt-8 bg-muted/50">
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">
-              Complete games to earn experience and progress through the battle pass. Watch ads to unlock tiers instantly! Premium pass holders get bonus rewards!
+              Complete games to earn experience and progress through the battle pass. Premium pass holders get bonus rewards!
             </p>
           </CardContent>
         </Card>
       </div>
-
-      <WatchAdModal
-        open={adModalOpen}
-        onOpenChange={setAdModalOpen}
-        onAdComplete={() => watchAdMutation.mutate()}
-        isLoading={watchAdMutation.isPending}
-      />
     </div>
   );
 }
