@@ -1070,13 +1070,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUserByUsername(req.params.username);
       if (!user) return res.status(404).json({ message: "User not found" });
       
-      const tier = await storage.getGame(tierId); // Get tier details by ID
-      if (!tier) {
-        // Fetch the tier from database directly
-        const tierResult = await db.select().from(battlePassTiers).where(eq(battlePassTiers.id, tierId)).limit(1);
-        if (!tierResult[0]) return res.status(404).json({ message: "Tier not found" });
-      }
-      
       // Claim the reward
       await storage.claimTierReward(user.id, tierId, season);
       
