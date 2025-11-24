@@ -25,16 +25,28 @@ export default function Home() {
     queryKey: ["/api/games"],
   });
 
+  const { data: currentUser } = useQuery<any>({
+    queryKey: [`/api/users/${username}`],
+    enabled: !!username,
+  });
+
   const deleteGameMutation = useMutation({
-    mutationFn: async (gameId: string) => {
-      return await apiRequest("DELETE", `/api/games/${gameId}`, { username });
+    mutationFn: async ({ gameId, isOwner }: { gameId: string; isOwner: boolean }) => {
+      const endpoint = isOwner ? `/api/owner/games/${gameId}?username=${username}` : `/api/games/${gameId}`;
+      if (isOwner) {
+        const res = await fetch(endpoint, { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.message || "Failed to delete game");
+        return data;
+      }
+      return await apiRequest("DELETE", endpoint, { username });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/games"] });
       toast({ title: "Success", description: "Game deleted" });
     },
     onError: (error: any) => {
-      toast({ title: "Error", description: error?.message || "Failed to delete game" });
+      toast({ title: "Error", description: error?.message || "Failed to delete game", variant: "destructive" });
     },
   });
 
@@ -185,14 +197,15 @@ export default function Home() {
                   <h3 className="text-lg font-semibold text-card-foreground line-clamp-1 flex-1" data-testid={`text-game-title-${game.id}`}>
                     {game.title}
                   </h3>
-                  {(game as any).createdBy && username && (
+                  {username && ((game as any).createdBy === username || currentUser?.role === "owner") && (
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 flex-shrink-0 text-destructive hover:bg-destructive/10"
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteGameMutation.mutate(game.id);
+                        const isOwner = currentUser?.role === "owner" && (game as any).createdBy !== username;
+                        deleteGameMutation.mutate({ gameId: game.id, isOwner });
                       }}
                       disabled={deleteGameMutation.isPending}
                       data-testid={`button-delete-game-${game.id}`}
