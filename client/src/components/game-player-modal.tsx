@@ -169,11 +169,8 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username }),
         });
-        const data = await response.json();
-        if (response.ok) {
-          toast({ title: "Session Ended", description: `Earned ${data.xpEarned} XP and ${data.coinsEarned} coins!` });
-        } else {
-          console.error("Play session error:", data);
+        if (!response.ok) {
+          console.error("Play session error");
         }
       } catch (err) {
         console.error("Failed to end play session:", err);
@@ -205,19 +202,26 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
   }, [open, onClose]);
 
 
-  // Track coins while playing - award 5 coins per minute
+  // Track coins and XP while playing - award 50 coins and 50 XP per minute
   useEffect(() => {
     if (!open || !username) return;
 
     const interval = setInterval(async () => {
       try {
+        // Award coins
         await fetch("/api/coins/add", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, amount: 5 }),
+          body: JSON.stringify({ username, amount: 50 }),
+        });
+        // Award XP to current season battle pass
+        await fetch(`/api/battlepass/${username}/add-xp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ xp: 50 }),
         });
       } catch (err) {
-        console.error("Failed to add coins:", err);
+        console.error("Failed to add coins/XP:", err);
       }
     }, 60000); // Every 60 seconds
 
