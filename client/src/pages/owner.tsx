@@ -316,15 +316,18 @@ export default function OwnerPanel() {
       const res = await fetch(`/api/owner/games/${gameId}?username=${username}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete game");
-      return res.json();
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.message || "Failed to delete game");
+      }
+      return data;
     },
     onSuccess: () => {
       toast({ title: "Game deleted!", description: "Game has been removed." });
       queryClient.invalidateQueries({ queryKey: ["/api/games"] });
     },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to delete game", variant: "destructive" });
+    onError: (error: any) => {
+      toast({ title: "Error", description: error?.message || "Failed to delete game", variant: "destructive" });
     },
   });
 
