@@ -127,7 +127,7 @@ export function GameOptionsMenu({ game, createdBy }: GameOptionsMenuProps) {
 
           <DropdownMenuItem onClick={() => setBlockDialogOpen(true)} className="text-destructive" data-testid="menu-block">
             <Ban className="w-4 h-4 mr-2" />
-            Block {createdBy}
+            Block {creatorUsername}
           </DropdownMenuItem>
 
           <DropdownMenuItem className="text-destructive" data-testid="menu-report">
@@ -177,10 +177,10 @@ export function GameOptionsMenu({ game, createdBy }: GameOptionsMenuProps) {
       <Dialog open={blockDialogOpen} onOpenChange={setBlockDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Block {createdBy}?</DialogTitle>
+            <DialogTitle>Block {creatorUsername}?</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground mb-4">
-            You won't see games from {createdBy} and they can't contact you.
+            You won't see games from {creatorUsername} and they can't contact you.
           </p>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setBlockDialogOpen(false)}>
