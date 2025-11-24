@@ -100,6 +100,7 @@ export interface IStorage {
   // Tier rewards
   claimTierReward(userId: string, tierId: string, season: number): Promise<ClaimedTierReward>;
   getClaimedTierRewards(userId: string, season: number): Promise<ClaimedTierReward[]>;
+  clearClaimedTierRewards(userId: string, season: number): Promise<void>;
 
   // Season management
   changeUserBattlePassSeason(userId: string, season: number): Promise<UserBattlePassProgress>;
@@ -499,6 +500,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async changeUserBattlePassSeason(userId: string, season: number): Promise<UserBattlePassProgress> {
+    // Clear claimed rewards for the season so user gets a fresh start
+    await this.clearClaimedTierRewards(userId, season);
+    
     const result = await db.update(userBattlePassProgress)
       .set({ currentSeason: season, currentTier: 0, experience: 0 })
       .where(eq(userBattlePassProgress.userId, userId))
@@ -546,6 +550,11 @@ export class DatabaseStorage implements IStorage {
 
   async getClaimedTierRewards(userId: string, season: number): Promise<ClaimedTierReward[]> {
     return await db.select().from(claimedTierRewards)
+      .where(and(eq(claimedTierRewards.userId, userId), eq(claimedTierRewards.season, season)));
+  }
+
+  async clearClaimedTierRewards(userId: string, season: number): Promise<void> {
+    await db.delete(claimedTierRewards)
       .where(and(eq(claimedTierRewards.userId, userId), eq(claimedTierRewards.season, season)));
   }
 
