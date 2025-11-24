@@ -202,7 +202,7 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
   }, [open, onClose]);
 
 
-  // Track coins and XP while playing - award 50 coins and 50 XP per minute
+  // Track coins and XP while playing - award 25 coins and 50 XP per minute
   useEffect(() => {
     if (!open || !username) return;
 
@@ -212,7 +212,7 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
         await fetch("/api/coins/add", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, amount: 50 }),
+          body: JSON.stringify({ username, amount: 25 }),
         });
         // Award XP to current season battle pass
         await fetch(`/api/battlepass/${username}/add-xp`, {
