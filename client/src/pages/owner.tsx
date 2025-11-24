@@ -37,6 +37,8 @@ export default function OwnerPanel() {
   const [publisherId, setPublisherId] = useState("");
   const [bannerAdUnitId, setBannerAdUnitId] = useState("");
   const [rewardedAdUnitId, setRewardedAdUnitId] = useState("");
+  const [gameSearchQuery, setGameSearchQuery] = useState("");
+  const [isManageGamesOpen, setIsManageGamesOpen] = useState(false);
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/admin/themes"] });
@@ -306,6 +308,23 @@ export default function OwnerPanel() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to update tier", variant: "destructive" });
+    },
+  });
+
+  const deleteGameMutation = useMutation({
+    mutationFn: async (gameId: string) => {
+      const res = await fetch(`/api/owner/games/${gameId}?username=${username}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete game");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Game deleted!", description: "Game has been removed." });
+      queryClient.invalidateQueries({ queryKey: ["/api/games"] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete game", variant: "destructive" });
     },
   });
 
@@ -641,6 +660,78 @@ export default function OwnerPanel() {
                             Ban
                           </Button>
                         )}
+                      </div>
+                    ))
+                )}
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+
+        {/* Manage Games */}
+        <Dialog open={isManageGamesOpen} onOpenChange={setIsManageGamesOpen}>
+          <Card className="mb-8 border-destructive/50 bg-destructive/5">
+            <CardHeader>
+              <CardTitle>Manage Games</CardTitle>
+              <CardDescription>Delete any game published by any user</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DialogTrigger asChild>
+                <Button variant="destructive" data-testid="button-manage-games">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Manage Games
+                </Button>
+              </DialogTrigger>
+            </CardContent>
+          </Card>
+
+          <DialogContent className="max-w-md max-h-96 flex flex-col">
+            <DialogHeader>
+              <DialogTitle>Manage Games</DialogTitle>
+            </DialogHeader>
+            
+            <div className="flex items-center gap-2 px-1">
+              <Search className="w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search games..."
+                value={gameSearchQuery}
+                onChange={(e) => setGameSearchQuery(e.target.value)}
+                className="flex-1"
+                data-testid="input-game-search"
+              />
+            </div>
+
+            <ScrollArea className="flex-1">
+              <div className="space-y-2 pr-4">
+                {allGames
+                  .filter(g => g.title.toLowerCase().includes(gameSearchQuery.toLowerCase()))
+                  .length === 0 ? (
+                  <p className="text-sm text-muted-foreground p-4">No games found</p>
+                ) : (
+                  allGames
+                    .filter(g => g.title.toLowerCase().includes(gameSearchQuery.toLowerCase()))
+                    .map((game) => (
+                      <div
+                        key={game.id}
+                        className="flex items-center justify-between p-2 hover-elevate rounded-md"
+                        data-testid={`game-item-${game.id}`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-medium truncate">{game.title}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {game.price ? `Premium (${game.price} coins)` : "Free"}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteGameMutation.mutate(game.id)}
+                          disabled={deleteGameMutation.isPending}
+                          data-testid={`button-delete-game-${game.id}`}
+                          className="ml-2"
+                        >
+                          Delete
+                        </Button>
                       </div>
                     ))
                 )}
