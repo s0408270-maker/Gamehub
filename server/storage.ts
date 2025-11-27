@@ -473,7 +473,7 @@ export class DatabaseStorage implements IStorage {
   async addBattlePassExperience(userId: string, amount: number): Promise<UserBattlePassProgress> {
     const progress = await this.getUserBattlePassProgress(userId);
     const newExp = (progress.experience || 0) + amount;
-    const expPerTier = 3000; // 50 xp/min * 60 min = 3000 xp per tier
+    const expPerTier = 500; // XP required per tier
     const newTier = Math.min(50, progress.currentTier + Math.floor(newExp / expPerTier));
     
     const result = await db.update(userBattlePassProgress)
