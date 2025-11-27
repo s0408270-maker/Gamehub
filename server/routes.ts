@@ -676,6 +676,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { username } = req.body;
       if (!username) return res.status(400).json({ message: "Username required" });
 
+      const group = await storage.getGroup(req.params.groupId);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+
+      // If group is private, it should not be joinable directly - must use join code
+      if (group.isPrivate === "true") {
+        return res.status(403).json({ message: "This is a private group. Use the join code to join." });
+      }
+
       const user = await storage.getOrCreateUser(username);
       const isMember = await storage.isGroupMember(req.params.groupId, user.id);
       

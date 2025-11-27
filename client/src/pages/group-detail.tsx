@@ -258,6 +258,29 @@ export default function GroupDetail() {
             </Dialog>
           )}
         </div>
+
+        {/* Private group join code display - only visible to creator */}
+        {group.isPrivate === "true" && group.createdBy === (currentUser as any)?.id && group.joinCode && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+            <div className="flex items-center gap-2 p-3 bg-card border border-border rounded-lg">
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground">Join Code (share with members):</p>
+                <p className="font-mono font-bold text-primary" data-testid="text-join-code">{group.joinCode}</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  navigator.clipboard.writeText(group.joinCode!);
+                  toast({ title: "Copied!", description: "Join code copied to clipboard" });
+                }}
+                data-testid="button-copy-join-code"
+              >
+                Copy
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Content */}
