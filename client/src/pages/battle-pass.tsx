@@ -96,7 +96,7 @@ export default function BattlePass() {
   }
 
   const { progress, tiers } = battlePassData;
-  const nextTierXp = 3000; // 50 XP/min * 60 min
+  const nextTierXp = 500; // XP required per tier
   const tierProgress = ((progress.experience || 0) / nextTierXp) * 100;
 
   return (
