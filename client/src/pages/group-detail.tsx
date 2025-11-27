@@ -34,15 +34,25 @@ export default function GroupDetail() {
   });
 
   // Queries
-  const { data: group, isLoading: groupLoading } = useQuery<Group>({
-    queryKey: [`/api/groups/${groupId}`],
-    enabled: !!groupId,
+  const { data: group, isLoading: groupLoading, error: groupError } = useQuery<Group>({
+    queryKey: [`/api/groups/${groupId}`, username],
+    queryFn: async () => {
+      const res = await fetch(`/api/groups/${groupId}?username=${encodeURIComponent(username)}`, { credentials: "include" });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    },
+    enabled: !!groupId && !!username,
   });
 
-  const { data: messages = [], isLoading: messagesLoading } = useQuery<Array<Message & { user: { id: string; username: string } }>>({
-    queryKey: [`/api/groups/${groupId}/messages`],
+  const { data: messages = [], isLoading: messagesLoading, error: messagesError } = useQuery<Array<Message & { user: { id: string; username: string } }>>({
+    queryKey: [`/api/groups/${groupId}/messages`, username],
+    queryFn: async () => {
+      const res = await fetch(`/api/groups/${groupId}/messages?username=${encodeURIComponent(username)}`, { credentials: "include" });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    },
     refetchInterval: 2000,
-    enabled: !!groupId,
+    enabled: !!groupId && !!username,
   });
 
   // Show notification when new messages arrive (only if not your message)
@@ -58,13 +68,23 @@ export default function GroupDetail() {
   }, [messages, username, toast]);
 
   const { data: games = [], isLoading: gamesLoading } = useQuery<GroupGame[]>({
-    queryKey: [`/api/groups/${groupId}/games`],
-    enabled: !!groupId,
+    queryKey: [`/api/groups/${groupId}/games`, username],
+    queryFn: async () => {
+      const res = await fetch(`/api/groups/${groupId}/games?username=${encodeURIComponent(username)}`, { credentials: "include" });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    },
+    enabled: !!groupId && !!username,
   });
 
   const { data: groupMembers = [] } = useQuery({
-    queryKey: [`/api/groups/${groupId}/members`],
-    enabled: !!groupId,
+    queryKey: [`/api/groups/${groupId}/members`, username],
+    queryFn: async () => {
+      const res = await fetch(`/api/groups/${groupId}/members?username=${encodeURIComponent(username)}`, { credentials: "include" });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    },
+    enabled: !!groupId && !!username,
   });
 
   const { data: myCosmeticsData } = useQuery({
@@ -192,9 +212,21 @@ export default function GroupDetail() {
   }
 
   if (!group) {
+    const errorMessage = (groupError as any)?.message || "Group not found";
+    const isAccessDenied = errorMessage.includes("must be a member");
+    
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <div className="text-muted-foreground">Group not found</div>
+        <div className="text-muted-foreground text-center max-w-md">
+          {isAccessDenied ? (
+            <>
+              <p className="font-semibold mb-2">Private Group</p>
+              <p>This is a private group. You need a join code to access it.</p>
+            </>
+          ) : (
+            <p>{errorMessage}</p>
+          )}
+        </div>
         <Button onClick={() => setLocation("/groups")}>Back to Groups</Button>
       </div>
     );

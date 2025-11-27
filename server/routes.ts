@@ -654,21 +654,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const group = await storage.getGroup(req.params.groupId);
       if (!group) return res.status(404).json({ message: "Group not found" });
+
+      // Check if private and verify membership
+      if (group.isPrivate === "true") {
+        const username = req.query.username as string;
+        if (!username) {
+          return res.status(403).json({ message: "You must be a member to view this private group" });
+        }
+        const user = await storage.getUserByUsername(username);
+        if (!user) {
+          return res.status(403).json({ message: "You must be a member to view this private group" });
+        }
+        const isMember = await storage.isGroupMember(req.params.groupId, user.id);
+        if (!isMember) {
+          return res.status(403).json({ message: "You must be a member to view this private group" });
+        }
+      }
+
       res.json(group);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch group" });
     }
   });
 
+
   // GET /api/groups/:groupId/members - Get group members
   app.get("/api/groups/:groupId/members", async (req, res) => {
     try {
+      const group = await storage.getGroup(req.params.groupId);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+
+      // Check if private and verify membership
+      if (group.isPrivate === "true") {
+        const username = req.query.username as string;
+        if (!username) {
+          return res.status(403).json({ message: "You must be a member to view this private group" });
+        }
+        const user = await storage.getUserByUsername(username);
+        if (!user) {
+          return res.status(403).json({ message: "You must be a member to view this private group" });
+        }
+        const isMember = await storage.isGroupMember(req.params.groupId, user.id);
+        if (!isMember) {
+          return res.status(403).json({ message: "You must be a member to view this private group" });
+        }
+      }
+
       const members = await storage.getGroupMembers(req.params.groupId);
       res.json(members);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch members" });
     }
   });
+
 
   // POST /api/groups/:groupId/join - Join a group
   app.post("/api/groups/:groupId/join", async (req, res) => {
@@ -699,12 +737,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/groups/:groupId/games - Get group games
   app.get("/api/groups/:groupId/games", async (req, res) => {
     try {
+      const group = await storage.getGroup(req.params.groupId);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+
+      // Check if private and verify membership
+      if (group.isPrivate === "true") {
+        const username = req.query.username as string;
+        if (!username) {
+          return res.status(403).json({ message: "You must be a member to view this private group" });
+        }
+        const user = await storage.getUserByUsername(username);
+        if (!user) {
+          return res.status(403).json({ message: "You must be a member to view this private group" });
+        }
+        const isMember = await storage.isGroupMember(req.params.groupId, user.id);
+        if (!isMember) {
+          return res.status(403).json({ message: "You must be a member to view this private group" });
+        }
+      }
+
       const games = await storage.getGroupGames(req.params.groupId);
       res.json(games);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch group games" });
     }
   });
+
 
   // POST /api/groups/:groupId/games - Upload game to group
   app.post(
@@ -749,6 +807,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/groups/:groupId/messages - Get group messages
   app.get("/api/groups/:groupId/messages", async (req, res) => {
     try {
+      const group = await storage.getGroup(req.params.groupId);
+      if (!group) return res.status(404).json({ message: "Group not found" });
+
+      // Check if private and verify membership
+      if (group.isPrivate === "true") {
+        const username = req.query.username as string;
+        if (!username) {
+          return res.status(403).json({ message: "You must be a member to view this private group" });
+        }
+        const user = await storage.getUserByUsername(username);
+        if (!user) {
+          return res.status(403).json({ message: "You must be a member to view this private group" });
+        }
+        const isMember = await storage.isGroupMember(req.params.groupId, user.id);
+        if (!isMember) {
+          return res.status(403).json({ message: "You must be a member to view this private group" });
+        }
+      }
+
       const messages = await storage.getGroupMessages(req.params.groupId);
       res.json(messages);
     } catch (error) {
