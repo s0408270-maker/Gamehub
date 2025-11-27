@@ -381,8 +381,10 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
               size="icon"
               className="text-white hover:bg-white/10 select-none"
               onClick={toggleFullscreen}
+              onContextMenu={(e) => e.preventDefault()}
               data-testid="button-fullscreen-toggle"
               title="Toggle fullscreen"
+              style={{ WebkitUserSelect: "none", WebkitTouchCallout: "none" }}
             >
               <Maximize2 className="w-5 sm:w-6 h-5 sm:h-6" />
             </Button>
