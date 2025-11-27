@@ -379,7 +379,7 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:bg-white/10"
+              className="text-white hover:bg-white/10 select-none"
               onClick={toggleFullscreen}
               data-testid="button-fullscreen-toggle"
               title="Toggle fullscreen"
