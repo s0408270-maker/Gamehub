@@ -115,11 +115,11 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
       if (!elem) return;
 
       if (!document.fullscreenElement) {
-        await elem.requestFullscreen().catch(() => {
+        elem.requestFullscreen({ navigationUI: "hide" }).catch(() => {
           toast({ title: "Error", description: "Fullscreen not available", variant: "destructive" });
         });
       } else {
-        await document.exitFullscreen();
+        document.exitFullscreen().catch(err => console.error("Exit fullscreen error:", err));
       }
     } catch (err) {
       console.error("Fullscreen error:", err);
