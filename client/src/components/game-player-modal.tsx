@@ -106,12 +106,24 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
   const [difficulty, setDifficulty] = useState<string>("");
   const [avgDifficulty, setAvgDifficulty] = useState<number>(0);
   const [loadError, setLoadError] = useState<string>("");
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const gameType = (game as any).gameType || "html";
   const { toast } = useToast();
 
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
+  const toggleFullscreen = async () => {
+    try {
+      const elem = document.querySelector('[data-testid="modal-game-player"]') as HTMLElement;
+      if (!elem) return;
+
+      if (!document.fullscreenElement) {
+        await elem.requestFullscreen().catch(() => {
+          toast({ title: "Error", description: "Fullscreen not available", variant: "destructive" });
+        });
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.error("Fullscreen error:", err);
+    }
   };
 
   // Fetch average difficulty
@@ -323,16 +335,16 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
 
   return (
     <div 
-      className={`fixed inset-0 z-50 bg-black/95 flex items-center justify-center ${isFullscreen ? 'p-0' : 'p-2 sm:p-4'}`}
-      onClick={isFullscreen ? undefined : onClose}
+      className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-2 sm:p-4"
+      onClick={onClose}
       data-testid="modal-game-player"
     >
       <div 
-        className={`relative flex flex-col ${isFullscreen ? 'w-screen h-screen' : 'w-full max-w-7xl h-[90vh] sm:h-[90vh]'}`}
+        className="relative w-full max-w-7xl h-[90vh] sm:h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className={`flex items-center justify-between ${isFullscreen ? 'mb-0 px-4 py-2' : 'mb-2 sm:mb-4 px-2 sm:px-4'} gap-2`}>
+        <div className="flex items-center justify-between mb-2 sm:mb-4 px-2 sm:px-4 gap-2">
           <div className="flex-1 min-w-0">
             <h2 className="text-lg sm:text-2xl font-bold text-white truncate" data-testid="text-playing-game-title">
               {game.title}
@@ -370,9 +382,9 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
               className="text-white hover:bg-white/10"
               onClick={toggleFullscreen}
               data-testid="button-fullscreen-toggle"
-              title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              title="Toggle fullscreen"
             >
-              {isFullscreen ? <Minimize2 className="w-5 sm:w-6 h-5 sm:h-6" /> : <Maximize2 className="w-5 sm:w-6 h-5 sm:h-6" />}
+              <Maximize2 className="w-5 sm:w-6 h-5 sm:h-6" />
             </Button>
             <Button
               variant="ghost"
@@ -387,7 +399,7 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
         </div>
 
         {/* Game Container */}
-        <div className={`flex-1 bg-background overflow-hidden shadow-2xl flex items-center justify-center relative ${isFullscreen ? 'rounded-none' : 'rounded-md'}`}>
+        <div className="flex-1 bg-background rounded-md overflow-hidden shadow-2xl flex items-center justify-center relative">
           <GameOptionsMenu game={game} createdBy={game.createdBy} />
           {loading && (
             <div className="flex flex-col items-center gap-3 sm:gap-4 text-white px-4">
@@ -426,11 +438,9 @@ export function GamePlayerModal({ game, open, onClose }: GamePlayerModalProps) {
         </div>
 
 
-        {!isFullscreen && (
-          <p className="text-center text-white/60 text-xs sm:text-sm mt-2 sm:mt-4 px-2" data-testid="text-close-instruction">
-            Press ESC or click outside to close
-          </p>
-        )}
+        <p className="text-center text-white/60 text-xs sm:text-sm mt-2 sm:mt-4 px-2" data-testid="text-close-instruction">
+          Press ESC or click outside to close
+        </p>
       </div>
     </div>
   );
